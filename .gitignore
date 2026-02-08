@@ -1,0 +1,21 @@
+# Secrets
+.env
+client_secrets.json
+youtube_token.json
+
+# Output artifacts
+output/
+
+# Logs
+pipeline.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
