@@ -47,11 +47,20 @@ def check_banned_phrases(script: str, banned: list[str]) -> CheckResult:
 
 
 def check_title_length(title: str, min_len: int = 30, max_len: int = 100) -> CheckResult:
-    """Verify title length is within range."""
+    """Verify title length is within range and title is complete."""
     length = len(title)
-    if min_len <= length <= max_len:
-        return CheckResult(True, f"Title length {length} OK")
-    return CheckResult(False, f"Title length {length} outside [{min_len}, {max_len}]")
+    if not (min_len <= length <= max_len):
+        return CheckResult(False, f"Title length {length} outside [{min_len}, {max_len}]")
+
+    # Reject titles that look incomplete (end with colon, dash, ellipsis)
+    if title.rstrip().endswith((":", " -", " —", "...", " |")):
+        return CheckResult(False, f"Title appears incomplete (ends with trailing punctuation): '{title}'")
+
+    # Reject titles that are just a label/prefix
+    if ":" in title and len(title.split(":")[-1].strip()) < 5:
+        return CheckResult(False, f"Title appears to be a fragment with short/empty suffix: '{title}'")
+
+    return CheckResult(True, f"Title length {length} OK")
 
 
 # ---------------------------------------------------------------------------

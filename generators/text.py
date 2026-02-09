@@ -62,11 +62,14 @@ Channel theme: {config.channel_theme}
 Write ONE YouTube title for this topic: "{topic}"
 
 Requirements:
-- 40-80 characters
+- 40-80 characters total
+- The title MUST be a complete, self-contained statement or question — NOT a fragment
+- Do NOT end the title with a colon, dash, ellipsis, or any punctuation that implies continuation
+- Do NOT use a "Part 1:" or "Title:" format
 - Create a curiosity gap — make viewers feel they NEED to know
 - Use specific numbers or thresholds when relevant
 - Avoid clickbait that doesn't deliver (no "SHOCKING" or emoji)
-- Style examples:
+- Style examples (notice they are all complete statements):
   "Net Worth Levels Where Rules Quietly Change"
   "Why Banks Treat You Differently After This Number"
   "The System Rewards This Type of Wealth"
@@ -78,7 +81,7 @@ Return ONLY the title text, nothing else. No quotes, no explanation."""
         contents=prompt,
         config=types.GenerateContentConfig(
             temperature=config.text_model_temperature,
-            max_output_tokens=256,
+            max_output_tokens=1024,
         ),
     )
     return response.text.strip().strip('"').strip("'")
