@@ -1,7 +1,12 @@
-"""Thumbnail generation via Gemini Image + Pillow text overlay.
+"""Thumbnail generation via Gemini.
 
-Generates an eye-catching thumbnail with the reference character
-and overlays bold, legible title text.
+Uses a two-step process:
+1. Gemini text model generates an optimized image prompt based on the
+   title/topic using a thumbnail strategist system prompt.
+2. Gemini image model generates the final thumbnail with text baked in.
+
+Style: flat 2D vector cartoon, bold typography, high contrast,
+mobile-optimized, 1280x720.
 """
 
 import io
@@ -10,11 +15,51 @@ from pathlib import Path
 
 from google import genai
 from google.genai import types
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 
 from config_loader import Config
 
 logger = logging.getLogger(__name__)
+
+THUMBNAIL_STRATEGIST_PROMPT = """You are an elite YouTube thumbnail strategist specializing in high-CTR finance and system-analysis content.
+
+Your task is to generate one single image generation prompt for a YouTube thumbnail based on the provided video title and topic.
+
+The thumbnail must be as emotionally engaging and click-inducing as possible, while remaining legible on mobile.
+
+The thumbnail MUST include the provided reference image of the man as the recurring protagonist.
+
+Non-Negotiable Requirements:
+- The man from the reference image MUST be present and clearly visible
+- He must be rendered as a cartoon version of the reference image
+- Facial features and hairstyle should remain recognizable
+- Facial expression should be exaggerated (shock, worry, realization, disbelief, concern, tension)
+
+Strategy Instructions:
+1. Identify the emotional hook implied by the title (fear, surprise, imbalance, loss, urgency).
+2. Choose one dramatic visual metaphor that amplifies this emotion (cracking dollar sign, collapsing graph, tipping scale, sinking ship, broken clock, vault snapping shut, cliff edge, system fracture).
+3. Place the reference character in direct interaction with the metaphor (reacting to it, pointing at it, standing in front of it).
+4. Use contrast and scale to exaggerate stakes (oversized symbols, steep arrows, broken elements).
+5. Add 2–5 words of bold ALL-CAPS text that creates curiosity or tension without giving answers.
+
+Thumbnail Style (must be embedded in the output prompt):
+- Flat 2D vector cartoon illustration
+- Clean outlines, bold shapes
+- Exaggerated facial expression and body language
+- White or very light background for contrast
+- Large, heavy sans-serif typography
+- High contrast color use
+- Muted base palette (teal, gray, beige) with strong red or green accents
+- Dramatic but clean (no clutter)
+- No photorealism
+- No 3D
+- Optimized for mobile viewing
+- Aspect ratio 16:9, resolution 1280x720
+
+Output Rules:
+- Output only one image generation prompt
+- Single paragraph
+- No explanations or meta commentary"""
 
 
 def generate_thumbnail(
@@ -24,32 +69,37 @@ def generate_thumbnail(
     config: Config,
     client: genai.Client,
 ) -> Path:
-    """Generate a YouTube thumbnail with character and bold text overlay.
+    """Generate a YouTube thumbnail using a two-step AI process.
 
-    Two-step process:
-    1. Use Gemini to generate a dramatic base image with the reference character
-    2. Use Pillow to overlay large, high-contrast text
+    Step 1: Gemini text model creates an optimized image generation prompt.
+    Step 2: Gemini image model generates the thumbnail with text baked in.
     """
-    # Step 1: Generate base image via Gemini
     reference_img = Image.open(config.reference_image_path)
 
-    thumbnail_prompt = (
-        f"A dramatic YouTube thumbnail photo. The man from the reference photo "
-        f"appears prominently on the right side of the frame with an expressive, "
-        f"engaging facial expression (surprised, intense, or thoughtful). "
-        f"The background subtly suggests finance and money themes — "
-        f"perhaps blurred city buildings, dollar signs, or financial charts. "
-        f"Bold, vibrant colors. High contrast. Eye-catching composition. "
-        f"The left side of the image should have a solid or gradient area "
-        f"suitable for text overlay. "
-        f"Topic context: {topic}. "
-        f"No text in the image — text will be added separately. "
-        f"16:9 aspect ratio, photorealistic, professional YouTube thumbnail style."
+    # Step 1: Generate the image prompt via text model
+    logger.info("Generating thumbnail prompt...")
+    strategist_input = (
+        f"{THUMBNAIL_STRATEGIST_PROMPT}\n\n"
+        f"Video Title: {title}\n"
+        f"Video Topic: {topic}"
     )
 
+    prompt_response = client.models.generate_content(
+        model=config.text_model_name,
+        contents=strategist_input,
+        config=types.GenerateContentConfig(
+            temperature=0.9,
+            max_output_tokens=1024,
+        ),
+    )
+    image_prompt = prompt_response.text.strip()
+    logger.info(f"Thumbnail prompt: {image_prompt[:120]}...")
+
+    # Step 2: Generate the thumbnail image
+    logger.info("Generating thumbnail image...")
     response = client.models.generate_content(
         model=config.image_model,
-        contents=[thumbnail_prompt, reference_img],
+        contents=[image_prompt, reference_img],
         config=types.GenerateContentConfig(
             response_modalities=["TEXT", "IMAGE"],
         ),
@@ -70,110 +120,7 @@ def generate_thumbnail(
     if base_img is None:
         raise RuntimeError("No image data in thumbnail generation response")
 
-    # Step 2: Overlay text
-    short_text = _shorten_for_thumbnail(title)
-    base_img = _overlay_text(base_img, short_text)
-
     thumb_path = output_dir / "thumbnail.png"
     base_img.save(thumb_path, "PNG")
     logger.info(f"Thumbnail saved: {thumb_path}")
     return thumb_path
-
-
-def _shorten_for_thumbnail(title: str) -> str:
-    """Extract the most impactful 3-5 words from the title.
-
-    Thumbnail text should be extremely short — readable at small sizes.
-    Strips filler words to keep only the punch.
-    """
-    filler = {"the", "a", "an", "is", "are", "was", "were", "of", "in", "to", "and", "for", "it", "its"}
-    words = title.split()
-    # Remove leading filler words (e.g., "Why The" → start at "Banking")
-    key_words = [w for w in words if w.lower() not in filler]
-    if len(key_words) <= 5:
-        return " ".join(key_words).upper()
-    return " ".join(key_words[:4]).upper()
-
-
-def _overlay_text(img: Image.Image, text: str) -> Image.Image:
-    """Overlay bold, high-contrast text on the left portion of the image."""
-    draw = ImageDraw.Draw(img)
-    w, h = img.size
-
-    # Text area: left 55% of the image
-    text_area_width = int(w * 0.55)
-    margin = int(w * 0.04)
-    max_text_width = text_area_width - 2 * margin
-
-    # Auto-size font: start large, shrink until text fits within ~3-4 lines
-    font_size = 80
-    while font_size > 30:
-        font = _get_bold_font(size=font_size)
-        lines = _wrap_text(text, font, max_text_width, draw)
-        if len(lines) <= 4:
-            break
-        font_size -= 4
-
-    line_text = "\n".join(lines)
-
-    # Calculate text position (vertically centered on left side)
-    bbox = draw.multiline_textbbox((0, 0), line_text, font=font)
-    text_height = bbox[3] - bbox[1]
-    x = margin
-    y = (h - text_height) // 2
-
-    # Draw text with thick stroke for legibility
-    draw.multiline_text(
-        (x, y),
-        line_text,
-        fill="white",
-        font=font,
-        stroke_width=5,
-        stroke_fill="black",
-        spacing=8,
-    )
-
-    return img
-
-
-def _wrap_text(
-    text: str, font: ImageFont.ImageFont, max_width: int, draw: ImageDraw.ImageDraw
-) -> list[str]:
-    """Word-wrap text to fit within max_width pixels."""
-    words = text.split()
-    lines: list[str] = []
-    current_line: list[str] = []
-
-    for word in words:
-        test_line = " ".join(current_line + [word])
-        bbox = draw.textbbox((0, 0), test_line, font=font)
-        if bbox[2] - bbox[0] <= max_width:
-            current_line.append(word)
-        else:
-            if current_line:
-                lines.append(" ".join(current_line))
-            current_line = [word]
-
-    if current_line:
-        lines.append(" ".join(current_line))
-
-    return lines
-
-
-def _get_bold_font(size: int) -> ImageFont.ImageFont:
-    """Try to load a bold system font, fall back to default."""
-    font_paths = [
-        "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
-        "/System/Library/Fonts/Supplemental/Helvetica Bold.ttf",
-        "/System/Library/Fonts/Helvetica.ttc",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-    ]
-    for path in font_paths:
-        try:
-            return ImageFont.truetype(path, size)
-        except (OSError, IOError):
-            continue
-
-    logger.warning("No bold system font found, using default font")
-    return ImageFont.load_default()
