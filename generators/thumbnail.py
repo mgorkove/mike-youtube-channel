@@ -81,16 +81,18 @@ def generate_thumbnail(
 
 
 def _shorten_for_thumbnail(title: str) -> str:
-    """Extract 3-6 impactful words from the title for thumbnail text.
+    """Extract the most impactful 3-5 words from the title.
 
     Thumbnail text should be extremely short — readable at small sizes.
+    Strips filler words to keep only the punch.
     """
+    filler = {"the", "a", "an", "is", "are", "was", "were", "of", "in", "to", "and", "for", "it", "its"}
     words = title.split()
-    if len(words) <= 6:
-        return title.upper()
-    # Take first 5 words, or find a natural break
-    short = " ".join(words[:5])
-    return short.upper()
+    # Remove leading filler words (e.g., "Why The" → start at "Banking")
+    key_words = [w for w in words if w.lower() not in filler]
+    if len(key_words) <= 5:
+        return " ".join(key_words).upper()
+    return " ".join(key_words[:4]).upper()
 
 
 def _overlay_text(img: Image.Image, text: str) -> Image.Image:
@@ -98,15 +100,20 @@ def _overlay_text(img: Image.Image, text: str) -> Image.Image:
     draw = ImageDraw.Draw(img)
     w, h = img.size
 
-    # Try to use a bold system font; fall back to default
-    font = _get_bold_font(size=68)
-
     # Text area: left 55% of the image
     text_area_width = int(w * 0.55)
     margin = int(w * 0.04)
+    max_text_width = text_area_width - 2 * margin
 
-    # Word-wrap the text to fit the area
-    lines = _wrap_text(text, font, text_area_width - 2 * margin, draw)
+    # Auto-size font: start large, shrink until text fits within ~3-4 lines
+    font_size = 80
+    while font_size > 30:
+        font = _get_bold_font(size=font_size)
+        lines = _wrap_text(text, font, max_text_width, draw)
+        if len(lines) <= 4:
+            break
+        font_size -= 4
+
     line_text = "\n".join(lines)
 
     # Calculate text position (vertically centered on left side)
