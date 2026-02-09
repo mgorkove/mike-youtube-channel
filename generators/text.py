@@ -96,6 +96,8 @@ def generate_script(topic: str, config: Config, client: genai.Client) -> str:
     """Generate a 3500-4500 word YouTube script using the prompt template."""
     prompt = config.script_generation_prompt.replace("[TOPIC]", topic)
 
+    banned_list = ", ".join(f'"{p}"' for p in config.banned_phrases)
+
     # Add channel context
     prompt += f"""
 
@@ -103,8 +105,11 @@ Channel context: {config.channel_theme}
 
 CRITICAL RULES:
 - The script must be between {config.script_min_words} and {config.script_max_words} words.
-- NEVER use prescriptive language like "you should", "you need to", "I recommend", "you must", "my advice", "I suggest", or "you have to".
-- Instead use observations: "what tends to happen is...", "the research shows...", "people in this situation often..."
+- ABSOLUTELY FORBIDDEN — do NOT use any of these phrases anywhere in the script: {banned_list}
+  These are prescriptive phrases. This channel is observational and analytical, NOT advisory.
+  Replace any urge to write prescriptive language with third-person observations like:
+    "what tends to happen is…", "the pattern that emerges…", "people in this position often…",
+    "the data suggests…", "institutions typically respond by…"
 - Write the script as a voiceover narration — no stage directions, no [brackets], just the spoken words.
 - Include a subscribe CTA early in the script (within the first 500 words).
 - Close by reinforcing that this information is rarely discussed and why.
@@ -119,7 +124,15 @@ Write the full script now."""
             max_output_tokens=config.text_model_max_tokens,
         ),
     )
-    return response.text.strip()
+    script = response.text.strip()
+
+    # Post-process: remove any banned phrases that slipped through
+    for phrase in config.banned_phrases:
+        script = script.replace(phrase, "")
+        script = script.replace(phrase.capitalize(), "")
+        script = script.replace(phrase.title(), "")
+
+    return script
 
 
 def generate_description(
