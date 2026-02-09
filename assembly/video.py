@@ -123,11 +123,11 @@ def assemble_video(
             idx = futures[future]
             clip_paths[idx] = future.result()
 
-    # Create concat file (clips in order)
+    # Create concat file (clips in order, filenames only since concat.txt is in same dir)
     concat_file = temp_dir / "concat.txt"
     with open(concat_file, "w") as f:
         for i in range(num_images):
-            f.write(f"file '{clip_paths[i]}'\n")
+            f.write(f"file '{clip_paths[i].name}'\n")
 
     # Concatenate clips + add audio
     output_path = output_dir / "video.mp4"
