@@ -118,14 +118,21 @@ def upload_video(
     video_id = response["id"]
     logger.info(f"Video uploaded: ID={video_id}")
 
-    # Set custom thumbnail
+    # Set custom thumbnail (requires verified YouTube account)
     if thumbnail_path.exists():
-        logger.info("Setting custom thumbnail...")
-        service.thumbnails().set(
-            videoId=video_id,
-            media_body=MediaFileUpload(str(thumbnail_path), mimetype="image/png"),
-        ).execute()
-        logger.info("Thumbnail set successfully")
+        try:
+            logger.info("Setting custom thumbnail...")
+            service.thumbnails().set(
+                videoId=video_id,
+                media_body=MediaFileUpload(str(thumbnail_path), mimetype="image/png"),
+            ).execute()
+            logger.info("Thumbnail set successfully")
+        except Exception as e:
+            logger.warning(
+                f"Could not set custom thumbnail: {e}. "
+                f"Your account may need phone verification. "
+                f"Go to youtube.com/verify to enable custom thumbnails."
+            )
 
     # Attempt to enable monetization if channel is in YouTube Partner Program.
     # This uses the videos.update endpoint to set monetization status.
