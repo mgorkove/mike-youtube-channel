@@ -60,14 +60,18 @@ def run(config: Config) -> list[VideoResult]:
         topics.extend(generated)
     topics = topics[:config.video_count]
 
+    # Match manual titles to topics (if provided)
+    manual_titles = config.titles or []
+
     logger.info(f"Processing {len(topics)} video(s)")
     for i, topic in enumerate(topics):
         logger.info(f"\n{'='*60}")
         logger.info(f"Video {i + 1}/{len(topics)}: {topic}")
         logger.info(f"{'='*60}")
 
+        manual_title = manual_titles[i] if i < len(manual_titles) else None
         try:
-            result = _process_single_video(topic, config, client)
+            result = _process_single_video(topic, config, client, manual_title=manual_title)
             results.append(result)
             logger.info(f"Completed: {result.video_url or 'dry-run'}")
         except Exception as e:
@@ -94,7 +98,10 @@ def run(config: Config) -> list[VideoResult]:
 
 
 def _process_single_video(
-    topic: str, config: Config, client: genai.Client
+    topic: str,
+    config: Config,
+    client: genai.Client,
+    manual_title: str | None = None,
 ) -> VideoResult:
     """Process a single video through all pipeline stages."""
     slug = _slugify(topic)
@@ -103,13 +110,17 @@ def _process_single_video(
     quality_results: dict[str, checks.CheckResult] = {}
 
     # --- Stage 1: Title ---
-    logger.info("Stage 1: Generating title...")
-    title = _retry_with_check(
-        generate_fn=lambda: text.generate_title(topic, config, client),
-        check_fn=lambda t: checks.check_title_length(t),
-        stage_name="title",
-        config=config,
-    )
+    if manual_title:
+        logger.info(f"Stage 1: Using manual title: {manual_title}")
+        title = manual_title
+    else:
+        logger.info("Stage 1: Generating title...")
+        title = _retry_with_check(
+            generate_fn=lambda: text.generate_title(topic, config, client),
+            check_fn=lambda t: checks.check_title_length(t),
+            stage_name="title",
+            config=config,
+        )
     _save_artifact(output_dir / "title.txt", title)
     logger.info(f"Title: {title}")
 

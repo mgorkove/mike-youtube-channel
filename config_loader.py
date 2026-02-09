@@ -70,6 +70,12 @@ class Config:
     # Script generation prompt
     script_generation_prompt: str
 
+    # Manual titles (one per topic, in order; empty = auto-generate)
+    titles: list[str] = None
+
+    # Target video length in seconds (None = use script word count range from config)
+    target_video_length: int | None = None
+
     # Dry run (skip upload)
     dry_run: bool = False
 

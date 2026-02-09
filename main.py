@@ -8,6 +8,14 @@ Usage:
     # Generate 1 video with a specific topic:
     python main.py --count 1 --topics "Why Banks Treat You Differently After \$100K"
 
+    # Specify manual titles (matched 1:1 with topics):
+    python main.py --count 2 \\
+        --topics "Topic one,Topic two" \\
+        --titles "Custom Title One,Custom Title Two"
+
+    # Set target video length (in seconds):
+    python main.py --count 1 --video-length 600
+
     # Full run with upload:
     python main.py --count 5
 
@@ -48,6 +56,20 @@ def main() -> None:
         help="Number of videos to generate (overrides config file video_count)",
     )
     parser.add_argument(
+        "--titles",
+        type=str,
+        default=None,
+        help="Comma-separated list of manual titles (matched 1:1 with topics). "
+        "Skips title generation for provided titles.",
+    )
+    parser.add_argument(
+        "--video-length",
+        type=int,
+        default=None,
+        help="Target video length in seconds (adjusts script word count). "
+        "e.g., 600 for ~10 minutes, 1800 for ~30 minutes.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Run the full pipeline but skip uploading to YouTube",
@@ -77,8 +99,17 @@ def main() -> None:
     overrides: dict = {}
     if args.topics:
         overrides["topics"] = [t.strip() for t in args.topics.split(",")]
+    if args.titles:
+        overrides["titles"] = [t.strip() for t in args.titles.split(",")]
     if args.count is not None:
         overrides["video_count"] = args.count
+    if args.video_length is not None:
+        overrides["target_video_length"] = args.video_length
+        # Adjust word count range based on target length
+        # ~2.5 words/sec speaking rate, with ±15% tolerance
+        target_words = int(args.video_length * 2.5)
+        overrides["script_min_words"] = int(target_words * 0.85)
+        overrides["script_max_words"] = int(target_words * 1.15)
     if args.dry_run:
         overrides["dry_run"] = True
 
