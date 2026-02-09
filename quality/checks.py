@@ -46,7 +46,7 @@ def check_banned_phrases(script: str, banned: list[str]) -> CheckResult:
 # ---------------------------------------------------------------------------
 
 
-def check_title_length(title: str, min_len: int = 30, max_len: int = 100) -> CheckResult:
+def check_title_length(title: str, min_len: int = 20, max_len: int = 80) -> CheckResult:
     """Verify title length is within range and title is complete."""
     length = len(title)
     if not (min_len <= length <= max_len):

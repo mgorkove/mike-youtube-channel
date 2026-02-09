@@ -55,24 +55,29 @@ Return ONLY a JSON array of topic strings, nothing else. Example:
 
 def generate_title(topic: str, config: Config, client: genai.Client) -> str:
     """Generate a high-CTR YouTube title for the given topic."""
-    prompt = f"""You are a YouTube title expert specializing in finance content.
+    prompt = f"""You are writing YouTube video titles for a faceless finance channel focused on money, banking, and power dynamics.
 
-Channel theme: {config.channel_theme}
+Topic: "{topic}"
 
-Write ONE YouTube title for this topic: "{topic}"
+Generate ONE YouTube title that:
+- Targets a 25–34 year old audience
+- Focuses on money, banking behavior, financial systems, wealth thresholds, risk, and power
+- Implies hidden rules, asymmetry, or system advantages
+- Sounds analytical and institutional, not motivational or influencer-style
+- Is descriptive, not prescriptive (no "how to", no advice)
+- Avoids hype words like secrets, hacks, tips, passive income, financial freedom
+- Avoids direct commands or promises
+- Is a complete statement — do NOT end with a colon, dash, or ellipsis
+- Keep under 60 characters when possible
 
-Requirements:
-- 40-80 characters total
-- The title MUST be a complete, self-contained statement or question — NOT a fragment
-- Do NOT end the title with a colon, dash, ellipsis, or any punctuation that implies continuation
-- Do NOT use a "Part 1:" or "Title:" format
-- Create a curiosity gap — make viewers feel they NEED to know
-- Use specific numbers or thresholds when relevant
-- Avoid clickbait that doesn't deliver (no "SHOCKING" or emoji)
-- Style examples (notice they are all complete statements):
-  "Net Worth Levels Where Rules Quietly Change"
-  "Why Banks Treat You Differently After This Number"
-  "The System Rewards This Type of Wealth"
+Preferred title patterns:
+"What Changes When X"
+"The Threshold Where X Happens"
+"Why X Is Treated Differently"
+"The Quiet Rules Behind X"
+"How the System Views X"
+
+Use concrete numbers sparingly (e.g., $100K, $1M).
 
 Return ONLY the title text, nothing else. No quotes, no explanation."""
 
