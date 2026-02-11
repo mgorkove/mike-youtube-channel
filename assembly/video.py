@@ -1,7 +1,8 @@
-"""Video assembly with Ken Burns zoom effect via ffmpeg.
+"""Video assembly with Ken Burns zoom effect.
 
-Uses ffmpeg's native zoompan filter instead of Python-level frame processing.
-Each image is rendered into a clip in parallel, then concatenated with audio.
+Uses PIL affine transforms for sub-pixel smooth center-zoom on each image,
+piping raw frames to ffmpeg for encoding. Clips are rendered in parallel,
+then concatenated with the audio track.
 """
 
 import logging
@@ -9,6 +10,8 @@ import shutil
 import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+
+from PIL import Image
 
 from config_loader import Config
 
@@ -41,36 +44,58 @@ def _render_clip(
     config: Config,
     total: int,
 ) -> Path:
-    """Render a single image into a video clip with Ken Burns zoom via ffmpeg."""
+    """Render a single image into a video clip with smooth Ken Burns center-zoom.
+
+    Uses PIL's Image.transform(AFFINE, LANCZOS) for sub-pixel precision,
+    eliminating the integer-rounding jitter that ffmpeg's zoompan/crop filters
+    produce. Raw RGB frames are piped to ffmpeg for encoding.
+    """
     frames = int(clip_duration * config.video_fps)
+    w = config.image_width
+    h = config.image_height
+    r = config.ken_burns_ratio
+    fps = config.video_fps
 
-    # Ken Burns zoom: from 1.0x to (1 + ratio * duration)x over the clip
-    # zoompan z expression: on = output frame number, so time = on / fps
-    zoom_expr = f"1+{config.ken_burns_ratio}*on/{config.video_fps}"
+    img = Image.open(img_path).convert("RGB")
 
-    cmd = [
-        "ffmpeg", "-y",
-        "-loop", "1",
-        "-i", str(img_path),
-        "-vf", (
-            f"zoompan=z='{zoom_expr}'"
-            f":d={frames}"
-            f":x='iw/2-(iw/zoom/2)'"
-            f":y='ih/2-(ih/zoom/2)'"
-            f":s={config.image_width}x{config.image_height}"
-            f":fps={config.video_fps},"
-            f"format=yuv420p"
-        ),
-        "-c:v", config.video_codec,
-        "-b:v", config.video_bitrate,
-        "-t", str(clip_duration),
-        str(clip_path),
-    ]
+    proc = subprocess.Popen(
+        [
+            "ffmpeg", "-y",
+            "-f", "rawvideo", "-pix_fmt", "rgb24",
+            "-s", f"{w}x{h}", "-r", str(fps),
+            "-i", "pipe:",
+            "-c:v", config.video_codec,
+            "-b:v", config.video_bitrate,
+            "-pix_fmt", "yuv420p",
+            str(clip_path),
+        ],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+    )
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
+    for frame_n in range(frames):
+        # zoom grows from 1.0 to 1.0 + ratio over (frames/fps) seconds
+        zoom = 1.0 + r * frame_n / fps
+        inv_z = 1.0 / zoom
+        # Affine maps output pixel (x,y) → source pixel (inv_z*x + cx, inv_z*y + cy)
+        # Center the crop: offset = center * (1 - 1/zoom)
+        cx = w / 2.0 * (1.0 - inv_z)
+        cy = h / 2.0 * (1.0 - inv_z)
+        frame = img.transform(
+            (w, h),
+            Image.AFFINE,
+            data=(inv_z, 0, cx, 0, inv_z, cy),
+            resample=Image.BICUBIC,
+        )
+        proc.stdin.write(frame.tobytes())
+
+    proc.stdin.close()
+    proc.wait()
+
+    if proc.returncode != 0:
         raise RuntimeError(
-            f"ffmpeg failed for clip {index + 1}: {result.stderr[-500:]}"
+            f"ffmpeg failed for clip {index + 1}: {proc.stderr.read().decode()[-500:]}"
         )
 
     logger.info(f"Rendered clip {index + 1}/{total}")
