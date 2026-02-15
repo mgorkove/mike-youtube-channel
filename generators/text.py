@@ -151,15 +151,16 @@ Title: "{title}"
 Topic: "{topic}"
 
 Requirements:
-1. Start with 2-3 engaging sentences summarizing what the viewer will learn.
-2. Naturally weave in ALL of these keywords: {keywords_str}
-3. Add a "What you'll learn:" section with 3-5 bullet points.
-4. Include relevant hashtags at the end.
-5. End with this exact disclaimer (copy it exactly):
+1. Write ONE short paragraph (3-4 sentences max) that summarizes the video and hooks the viewer.
+2. Naturally weave ALL of these keywords into that paragraph: {keywords_str}
+3. After the paragraph, add 3-5 relevant hashtags on a new line.
+4. End with this exact disclaimer (copy it verbatim):
 
 {config.disclaimer}
 
-The description should be 300-600 words. Return ONLY the description text, ready to paste into YouTube."""
+IMPORTANT: The description body must be a single paragraph — no bullet points, no sections, no headers, no line breaks within it. Just one compelling paragraph, then hashtags, then the disclaimer.
+
+Return ONLY the description text, ready to paste into YouTube."""
 
     response = client.models.generate_content(
         model=config.text_model_name,
@@ -192,11 +193,12 @@ For each segment, write a detailed image generation prompt that:
 - If the script mentions buying something, show him buying it
 - If the script discusses banks, show him in a bank setting
 - If the script talks about wealth, show visual markers of wealth
-- Uses cinematic, photorealistic style suitable for a YouTube video
-- Specifies lighting, setting, and composition
+- Uses a bold, colorful cartoon illustration style (like an animated explainer video)
+- Specifies setting and composition
+- Do NOT use the words "photorealistic" or "realistic" anywhere in the prompts
 
 Return ONLY a JSON array of exactly {num_images} prompt strings. Example:
-["A man in a business suit standing confidently in a modern bank lobby, cinematic lighting, photorealistic", "The same man reviewing financial documents at a desk with city skyline visible through windows, warm lighting"]"""
+["A cartoon man in a business suit standing confidently in a modern bank lobby, bold colorful cartoon illustration style", "The same cartoon man reviewing financial documents at a desk with city skyline visible through windows, vibrant cartoon style"]"""
 
     response = client.models.generate_content(
         model=config.text_model_name,

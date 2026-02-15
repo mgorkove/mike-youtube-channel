@@ -34,11 +34,11 @@ def _generate_single_image(
 ) -> Path:
     """Generate a single image with per-image retry logic."""
     full_prompt = (
-        f"Generate a photorealistic image in 16:9 aspect ratio. "
+        f"Generate a bold, colorful cartoon illustration in 16:9 aspect ratio. "
         f"The scene shows: {prompt}. "
-        f"The man from the reference photo must appear in this scene "
+        f"Draw the man from the reference photo as a cartoon character "
         f"with the same face, build, and appearance as in the reference. "
-        f"Cinematic lighting, high quality, YouTube video still frame style. "
+        f"Vibrant colors, clean cartoon style, YouTube animated explainer style. "
         f"No text or watermarks in the image."
     )
     img_path = images_dir / f"{index + 1:03d}.png"
