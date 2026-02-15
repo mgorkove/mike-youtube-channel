@@ -21,6 +21,12 @@ Usage:
 
     # Use a custom config file:
     python main.py --config my_config.yaml --count 2
+
+    # Resume a failed run from its output directory:
+    python main.py --resume output/why-banks-treat-you-differently
+
+    # Resume in dry-run mode (skip upload even if it wasn't done yet):
+    python main.py --resume output/why-banks-treat-you-differently --dry-run
 """
 
 import argparse
@@ -29,7 +35,7 @@ import logging
 import sys
 
 from config_loader import load_config
-from pipeline import run
+from pipeline import resume, run
 
 
 def main() -> None:
@@ -75,6 +81,14 @@ def main() -> None:
         help="Run the full pipeline but skip uploading to YouTube",
     )
     parser.add_argument(
+        "--resume",
+        type=str,
+        default=None,
+        metavar="OUTPUT_DIR",
+        help="Resume a previous run from the given output directory. "
+        "Skips stages that already completed successfully.",
+    )
+    parser.add_argument(
         "--log-level",
         default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
@@ -116,13 +130,19 @@ def main() -> None:
     if overrides:
         config = dataclasses.replace(config, **overrides)
 
-    logging.getLogger(__name__).info(
-        f"Starting pipeline: {config.video_count} video(s), "
-        f"dry_run={config.dry_run}"
-    )
+    log = logging.getLogger(__name__)
 
-    # Run the pipeline
-    results = run(config)
+    # Resume mode: pick up a single video from its output directory
+    if args.resume:
+        log.info(f"Resuming pipeline from: {args.resume}")
+        result = resume(args.resume, config)
+        results = [result]
+    else:
+        log.info(
+            f"Starting pipeline: {config.video_count} video(s), "
+            f"dry_run={config.dry_run}"
+        )
+        results = run(config)
 
     # Print summary
     print("\n" + "=" * 60)
