@@ -116,7 +116,7 @@ def main():
     # --- Step 8: Assemble video ---
     logger.info("Step 8: Assembling video...")
     video_path = video.assemble_video(image_paths, tts_result.audio_path, output_dir, config)
-    video_check = checks.check_video_file(video_path, tts_result.duration_seconds)
+    video_check = checks.check_video_file(video_path)
     logger.info(f"Video check: {video_check}")
 
     # --- Step 9: Upload (if requested) ---

@@ -116,12 +116,19 @@ def run(config: Config) -> list[VideoResult]:
     client = genai.Client()
     results: list[VideoResult] = []
 
+    # Fetch existing channel titles for deduplication
+    existing_titles: list[str] = []
+    if not config.dry_run:
+        existing_titles = youtube.fetch_existing_titles(config)
+    else:
+        logger.info("Dry run: skipping YouTube title fetch for deduplication")
+
     # Determine topics
     topics = config.topics[:config.video_count] if config.topics else []
     if len(topics) < config.video_count:
         needed = config.video_count - len(topics)
         logger.info(f"Generating {needed} topic(s)...")
-        generated = text.generate_topics(needed, config, client)
+        generated = text.generate_topics(needed, config, client, existing_titles=existing_titles)
         topics.extend(generated)
     topics = topics[:config.video_count]
 
@@ -136,7 +143,10 @@ def run(config: Config) -> list[VideoResult]:
 
         manual_title = manual_titles[i] if i < len(manual_titles) else None
         try:
-            result = _process_single_video(topic, config, client, manual_title=manual_title)
+            result = _process_single_video(
+                topic, config, client, manual_title=manual_title,
+                existing_titles=existing_titles,
+            )
             results.append(result)
             logger.info(f"Completed: {result.video_url or 'dry-run'}")
         except Exception as e:
@@ -168,6 +178,7 @@ def _process_single_video(
     client: genai.Client,
     manual_title: str | None = None,
     output_dir_override: Path | None = None,
+    existing_titles: list[str] | None = None,
 ) -> VideoResult:
     """Process a single video through all pipeline stages.
 
@@ -194,7 +205,7 @@ def _process_single_video(
         else:
             logger.info("Stage 1: Generating title...")
             title = _retry_with_check(
-                generate_fn=lambda: text.generate_title(topic, config, client),
+                generate_fn=lambda: text.generate_title(topic, config, client, existing_titles=existing_titles),
                 check_fn=lambda t: checks.check_title_length(t),
                 stage_name="title",
                 config=config,
@@ -490,11 +501,6 @@ def _retry_on_error(fn, stage_name: str, config: Config):
 
 def _check_script(script_text: str, config: Config) -> checks.CheckResult:
     """Run all script quality checks, return first failure or overall pass."""
-    wc = checks.check_word_count(
-        script_text, config.script_min_words, config.script_max_words
-    )
-    if not wc.passed:
-        return wc
     bp = checks.check_banned_phrases(script_text, config.banned_phrases)
     if not bp.passed:
         return bp

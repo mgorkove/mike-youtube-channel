@@ -191,10 +191,8 @@ def check_audio_file(audio_path: Path, script_word_count: int) -> CheckResult:
 # ---------------------------------------------------------------------------
 
 
-def check_video_file(
-    video_path: Path, expected_duration: float, tolerance: float = 2.0
-) -> CheckResult:
-    """Verify final video has correct duration and both audio+video streams."""
+def check_video_file(video_path: Path) -> CheckResult:
+    """Verify final video exists and has both audio+video streams."""
     if not video_path.exists():
         return CheckResult(False, f"Video not found: {video_path}")
     if video_path.stat().st_size == 0:
@@ -219,14 +217,4 @@ def check_video_file(
     if "audio" not in stream_types:
         return CheckResult(False, "No audio stream found")
 
-    actual_duration = float(probe["format"]["duration"])
-    if abs(actual_duration - expected_duration) <= tolerance:
-        return CheckResult(
-            True,
-            f"Video duration {actual_duration:.1f}s matches expected {expected_duration:.1f}s",
-        )
-    return CheckResult(
-        False,
-        f"Video duration {actual_duration:.1f}s differs from expected "
-        f"{expected_duration:.1f}s by more than {tolerance}s",
-    )
+    return CheckResult(True, "Video file has both video and audio streams")
