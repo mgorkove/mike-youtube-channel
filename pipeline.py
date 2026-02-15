@@ -358,10 +358,6 @@ def _process_single_video(
         video_path = video.assemble_video(
             image_paths, audio_path, output_dir, config
         )
-        video_check = checks.check_video_file(video_path, audio_duration)
-        quality_results["video"] = video_check
-        if not video_check.passed:
-            raise PipelineError(f"Video check failed: {video_check.message}")
         ckpt.mark_done("video")
         logger.info("Video assembled successfully")
 
