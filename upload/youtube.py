@@ -65,6 +65,44 @@ def get_youtube_service(config: Config):
     return build("youtube", "v3", credentials=creds)
 
 
+def fetch_existing_titles(config: Config) -> list[str]:
+    """Fetch video titles from the authenticated user's YouTube channel.
+
+    Returns an empty list if credentials are unavailable or any API error
+    occurs, so the pipeline can still run without deduplication context.
+    """
+    try:
+        service = get_youtube_service(config)
+    except Exception as e:
+        logger.warning(f"Could not authenticate with YouTube, skipping title fetch: {e}")
+        return []
+
+    titles = []
+    try:
+        page_token = None
+        while True:
+            response = service.search().list(
+                forMine=True,
+                type="video",
+                part="snippet",
+                maxResults=50,
+                pageToken=page_token,
+            ).execute()
+
+            for item in response.get("items", []):
+                titles.append(item["snippet"]["title"])
+
+            page_token = response.get("nextPageToken")
+            if not page_token:
+                break
+
+        logger.info(f"Fetched {len(titles)} existing video title(s) from YouTube")
+    except Exception as e:
+        logger.warning(f"Failed to fetch existing titles from YouTube: {e}")
+
+    return titles
+
+
 def upload_video(
     video_path: Path,
     title: str,

@@ -15,8 +15,23 @@ from config_loader import Config
 logger = logging.getLogger(__name__)
 
 
-def generate_topics(count: int, config: Config, client: genai.Client) -> list[str]:
+def generate_topics(
+    count: int,
+    config: Config,
+    client: genai.Client,
+    existing_titles: list[str] | None = None,
+) -> list[str]:
     """Generate a list of video topic ideas matching the channel theme."""
+    dedup_block = ""
+    if existing_titles:
+        titles_list = "\n".join(f"- {t}" for t in existing_titles)
+        dedup_block = f"""
+
+IMPORTANT: The channel already has videos on these topics. Do NOT generate topics that overlap with or are too similar to any of these existing titles:
+{titles_list}
+
+Each new topic must be clearly distinct from all of the above."""
+
     prompt = f"""You are a YouTube content strategist for a finance education channel.
 
 Channel theme: {config.channel_theme}
@@ -26,7 +41,7 @@ Generate exactly {count} unique video topic ideas. Each topic should:
 - Be specific enough to write a full script about
 - Target curiosity gaps that would interest a general audience
 - Focus on hidden mechanisms, thresholds, or behaviors in financial systems
-
+{dedup_block}
 Return ONLY a JSON array of topic strings, nothing else. Example:
 ["How Banks Decide Who Gets Special Treatment", "The Hidden Math Behind Credit Card Minimum Payments"]"""
 
@@ -53,8 +68,22 @@ Return ONLY a JSON array of topic strings, nothing else. Example:
     return topics[:count]
 
 
-def generate_title(topic: str, config: Config, client: genai.Client) -> str:
+def generate_title(
+    topic: str,
+    config: Config,
+    client: genai.Client,
+    existing_titles: list[str] | None = None,
+) -> str:
     """Generate a high-CTR YouTube title for the given topic."""
+    dedup_block = ""
+    if existing_titles:
+        titles_list = "\n".join(f"- {t}" for t in existing_titles)
+        dedup_block = f"""
+
+IMPORTANT: The channel already has these video titles. Your new title must NOT be the same as or too similar to any of them:
+{titles_list}
+"""
+
     prompt = f"""You are writing YouTube video titles for a faceless finance channel focused on money, banking, and power dynamics.
 
 Topic: "{topic}"
@@ -78,7 +107,7 @@ Preferred title patterns:
 "How the System Views X"
 
 Use concrete numbers sparingly (e.g., $100K, $1M).
-
+{dedup_block}
 Return ONLY the title text, nothing else. No quotes, no explanation."""
 
     response = client.models.generate_content(
