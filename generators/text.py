@@ -37,10 +37,11 @@ Each new topic must be clearly distinct from all of the above."""
 Channel theme: {config.channel_theme}
 
 Generate exactly {count} unique video topic ideas. Each topic should:
-- Address a specific, intriguing aspect of money, banking, or financial systems
+- Either directly affect the viewer's personal finances OR be aspirational (e.g., "how the wealthy do X", "what changes when you reach X")
+- NEVER be about abstract institutional mechanics that don't connect to the individual (no dark pools, repo markets, correspondent banking, etc.)
 - Be specific enough to write a full script about
 - Target curiosity gaps that would interest a general audience
-- Focus on hidden mechanisms, thresholds, or behaviors in financial systems
+- Focus on hidden mechanisms, thresholds, or behaviors in financial systems that impact real people
 {dedup_block}
 Return ONLY a JSON array of topic strings, nothing else. Example:
 ["How Banks Decide Who Gets Special Treatment", "The Hidden Math Behind Credit Card Minimum Payments"]"""
