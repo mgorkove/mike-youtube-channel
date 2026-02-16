@@ -44,6 +44,7 @@ Generate exactly {count} unique video topic ideas. Each topic should:
 - Speak to wealth-building life stages: paying off student loans, buying a first home, starting to invest, hitting $100K, career switching, salary negotiation, building credit, side income, starting a family on a budget
 - Mix these types: (1) aspirational "how millionaires/wealthy people do X", (2) milestone-based "what changes at $X", (3) eye-opening stats/data, (4) generational money topics (Gen Z, millennials vs boomers), (5) current events and trending financial news
 - NEVER target retirees or people over 60 — no Social Security optimization, Medicare, RMDs, or "how to live on a fixed income"
+- NEVER reference specific years (no "in 2024", "in 2025", "in 2026") — keep topics evergreen
 - NEVER be about abstract institutional mechanics (no dark pools, repo markets, correspondent banking, etc.)
 - Be specific enough to write a full 20-minute script about
 {dedup_block}
@@ -102,6 +103,7 @@ Generate ONE YouTube title that:
 - Can reference age or generation when relevant: "before 40", "Gen Z", "millennials"
 - Do NOT give direct advice or commands (no "do this", "stop doing X", "you need to")
 - Do NOT target retirees or seniors — no Social Security, Medicare, or "after 65" framing
+- Do NOT reference specific years (no "in 2024", "in 2025", "in 2026") — keep titles evergreen
 - Avoids hype words: secrets, hacks, tips, passive income, financial freedom
 - Is a complete statement — do NOT end with a colon, dash, or ellipsis
 - Keep under 65 characters when possible
