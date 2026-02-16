@@ -21,69 +21,64 @@ from config_loader import Config
 
 logger = logging.getLogger(__name__)
 
-THUMBNAIL_STRATEGIST_PROMPT = """You are an elite YouTube thumbnail strategist specializing in high-CTR finance and system-analysis content.
+THUMBNAIL_STRATEGIST_PROMPT = """You are an elite YouTube thumbnail strategist specializing in high-CTR finance content.
 
-Your task is to generate one single image generation prompt for a YouTube thumbnail based on the provided video title and topic.
-
-The thumbnail must be as emotionally engaging and click-inducing as possible, while remaining legible on mobile.
+Your task: generate ONE image-generation prompt for a YouTube thumbnail based on the video title/topic.
 
 The thumbnail MUST include the provided reference image of the man as the recurring protagonist.
 
-CRITICAL — Topic Relevance:
-- Every element in the thumbnail (text, objects, metaphors, background) MUST directly relate to the video title and topic
-- The ALL-CAPS overlay text MUST be derived from or directly reference the video title — extract the most provocative 2-4 words from the title itself
-- DO NOT include any objects, scenes, animals, technology, or text that are unrelated to the financial/economic topic
-- If the title is about taxes, show tax-related imagery. If about banking, show banking imagery. Stay literal to the topic.
+COMPOSITION — Keep it extremely simple:
+- The cartoon man from the reference image takes up 40-60% of the frame (upper body or half body)
+- ONE simple prop or visual element related to the topic (e.g., a bank building, a money bag, a chart arrow, a document)
+- Bold ALL-CAPS text overlay — 2-4 words derived from the video title
+- NOTHING ELSE. No floating symbols, no scattered dollar signs, no extra decorations, no small text, no labels
 
-BANNED — Do NOT use these generic clickbait phrases as overlay text:
-"EPIC FAIL", "GONE WRONG", "YOU WON'T BELIEVE", "SHOCKING", "OMG", "MIND BLOWN", "EXPOSED", "WHAT HAPPENED", "NOT CLICKBAIT"
-Instead, always pull text directly from the video title. Examples:
-- Title: "The Invisible Tax Cliff..." → Text: "TAX CLIFF" or "EARN MORE GET LESS"
-- Title: "How the Top 1% Use Life Insurance..." → Text: "PRIVATE BANKING" or "BE THE BANK"
-- Title: "The Accredited Investor Threshold..." → Text: "ILLEGAL FOR YOU" or "LOCKED OUT"
-- Title: "Lombard Loans: How the Wealthy..." → Text: "NEVER SELL" or "SPEND WITHOUT SELLING"
+BACKGROUND — Must be clean and simple:
+- Use a solid color or simple gradient — white, light gray, pale green, dark navy, or dark red
+- NO complex scenes, NO cityscapes, NO detailed environments
+- The background should make the character and text POP, not compete with them
 
-Non-Negotiable Requirements:
-- The man from the reference image MUST be present and clearly visible
-- He must be rendered as a cartoon version of the reference image in a bold adult animated cartoon style with thick black outlines
-- Facial features and hairstyle should remain recognizable
-- Facial expression should be exaggerated (shock, worry, realization, disbelief, concern, tension)
-- Thick black outlines around the character
+CHARACTER — Non-negotiable:
+- Render the man from the reference image as a cartoon in bold adult animated style with thick black outlines
+- Same hair, same face shape, same general appearance — must be recognizable as the same person
+- He wears the same teal/sage green crewneck sweater as in the reference image
+- Exaggerated facial expression: shock, concern, realization, excitement, or disbelief
+- Upper body or half body — he should be LARGE in the frame
+- He can point at something, hold something, react to something — one clear action
 
-Strategy Instructions:
-1. Read the video title carefully. Extract the core emotional hook and the specific financial concept.
-2. Choose ONE dramatic visual metaphor that directly represents the financial concept in the title (e.g., title about taxes → oversized tax form or IRS building; title about banks → bank vault or bank building; title about debt → chains or sinking weight; title about investing → stock chart or locked gate).
-3. Place the reference character in direct interaction with the metaphor (reacting to it, pointing at it, standing in front of it, running from it).
-4. Use contrast and scale to exaggerate stakes (oversized symbols, steep arrows, broken elements).
-5. Choose 2-4 words of bold ALL-CAPS overlay text extracted or paraphrased from the title. The text should be the most attention-grabbing phrase from the title.
+TEXT — Critical rules:
+- Choose 2-4 words of bold ALL-CAPS text extracted or paraphrased from the video title
+- The text must appear ONCE — do NOT duplicate it in multiple places
+- Text should be in thick, heavy, blocky font (Impact style) with black outline/stroke
+- Text fills roughly 30-40% of the thumbnail area
+- Place text at the top OR bottom — not both
+- Use white or yellow text on dark backgrounds, red or green text on light backgrounds
+- BANNED overlay phrases: "EPIC FAIL", "GONE WRONG", "YOU WON'T BELIEVE", "SHOCKING", "OMG", "MIND BLOWN", "EXPOSED", "WHAT HAPPENED", "NOT CLICKBAIT", "SECRET"
 
-Text Layout (CRITICAL — this is what makes or breaks the thumbnail):
-- The ALL-CAPS text must be MASSIVE — it should fill approximately 40-50% of the total thumbnail area
-- Text should be in thick, heavy, blocky sans-serif font (like Impact or Anton)
-- Maximum 2 lines of text, each line spanning most of the thumbnail width
-- Text can be placed at the top, bottom, or split top/bottom with the character in the middle
-- Each word should be large enough to read clearly at phone-screen size
-- Use colored text with black outline/stroke for contrast against any background
+Examples of good text choices:
+- Title: "What Changes When You Cross the $250K Threshold" → "$250K CHANGES"
+- Title: "How the Banking System Assigns Internal Risk Scores" → "YOUR RISK SCORE"
+- Title: "The Invisible Tax Cliff..." → "TAX CLIFF"
+- Title: "Lombard Loans: How the Wealthy..." → "NEVER SELL"
 
-Thumbnail Style (must be embedded in the output prompt):
-- Bold adult animated cartoon illustration style — thick black outlines, rounded shapes, smooth cel shading
-- NOT flat vector art, NOT realistic, NOT 3D
-- Exaggerated facial expression and body language
-- Background can be light OR dark depending on the mood — use dark/dramatic backgrounds for fear/urgency topics, lighter backgrounds for informational/aspirational topics
-- High contrast color palette: bold greens, reds, whites, and blacks
-- Use green text for money/positive themes, red text for danger/warning themes, white text on dark backgrounds
-- Simple, uncluttered composition — only the character, one financial visual metaphor, and the big text. Nothing else.
-- The scene must depict a financial/economic scenario — NOT a living room, NOT a TV studio, NOT a home interior
+STRICT BANS — The image must NOT contain:
+- Euro signs (€) — only use dollar signs ($) if any currency symbols appear
+- Placeholder names like "John Smith", "Jane Doe", etc.
+- Black bars or letterboxing at top/bottom
+- Duplicate text (the overlay text must appear exactly ONCE)
+- More than one prop/metaphor object — keep it to ONE
+- Small unreadable text or labels on objects
+
+STYLE:
+- Bold adult animated cartoon — thick black outlines, smooth cel shading, rounded shapes
+- NOT flat vector, NOT realistic, NOT 3D rendered
+- High contrast colors — the thumbnail must be eye-catching at phone-screen size
 - Aspect ratio 16:9, resolution 1280x720
 
-Output Rules:
-- First line: EXACT_TEXT: followed by the 2-4 word ALL-CAPS overlay text you chose
+Output format (strictly follow this):
+- First line: EXACT_TEXT: followed by the 2-4 word ALL-CAPS overlay text
 - Second line: the full image generation prompt as a single paragraph
-- Nothing else — no explanations or meta commentary
-
-Example output format:
-EXACT_TEXT: EARN MORE GET LESS
-A bold adult animated cartoon illustration for a YouTube thumbnail featuring..."""
+- Nothing else"""
 
 
 def generate_thumbnail(
@@ -128,14 +123,21 @@ def generate_thumbnail(
     logger.info(f"Overlay text: {overlay_text}")
     logger.info(f"Thumbnail prompt: {image_prompt[:120]}...")
 
-    # Reinforce the exact text at the start of the image prompt
+    # Reinforce clean composition and exact text
+    reinforcement = (
+        'CRITICAL RULES FOR THIS IMAGE:\n'
+        '- Clean, simple background — solid color or simple gradient only\n'
+        '- NO black bars or letterboxing\n'
+        '- NO euro signs — only dollar signs ($) if needed\n'
+        '- NO placeholder names (no "John Smith" etc.)\n'
+        '- NO scattered floating symbols or decorations\n'
+    )
     if overlay_text:
-        image_prompt = (
-            f'IMPORTANT: The large text overlay in this image must say '
-            f'exactly "{overlay_text}" in bold ALL-CAPS. Do not use any '
-            f'other text. The text must be massive and fill 40-50% of the '
-            f'image area.\n\n{image_prompt}'
+        reinforcement += (
+            f'- The text "{overlay_text}" must appear EXACTLY ONCE in bold '
+            f'ALL-CAPS with black outline. Do NOT duplicate it.\n'
         )
+    image_prompt = f'{reinforcement}\n{image_prompt}'
 
     # Step 2: Generate the thumbnail image
     logger.info("Generating thumbnail image...")
