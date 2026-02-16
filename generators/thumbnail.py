@@ -25,32 +25,20 @@ THUMBNAIL_STRATEGIST_PROMPT = """You are an elite YouTube thumbnail strategist. 
 
 Generate ONE image-generation prompt for a YouTube thumbnail based on the video title/topic.
 
-LAYOUT — The thumbnail has exactly these elements:
-1. GIANT TEXT (the dominant element — takes up ~50-60% of the frame)
-2. The cartoon man from the reference image (head and upper body, ~35-40% of frame)
-3. ONE simple background prop related to the topic (optional but encouraged — e.g., a bank vault door, a red cliff edge, a locked gate, a giant dollar sign, a cracking chart). This prop should be BEHIND or BESIDE the character, never in front. Keep it simple and recognizable as a single shape.
-4. A clean, bold background color
+LAYOUT — The thumbnail should look like a popular YouTube finance channel thumbnail:
+1. The cartoon man from the reference image — head and upper body or full body, taking up a significant portion of the frame
+2. Bold ALL-CAPS text overlay — 2-4 words derived from the video title
+3. Small illustrative icons, props, and visual elements that help tell the story of the video topic (e.g., dollar signs, money bags, bank buildings, chart arrows, documents, scales, locks, warning signs, level markers). These add visual interest and context.
+4. A WHITE or very light background (this is the default — most thumbnails should use white/off-white). Only use dark backgrounds for especially dark/urgent topics.
 
-CRITICAL: Every thumbnail on this channel must look DIFFERENT from the others. Vary the color scheme, layout direction, and prop each time.
+CRITICAL: Every thumbnail on this channel must look DIFFERENT. Vary the layout, icons, and color accents each time.
 
-TEXT — The #1 most important element:
+TEXT — Must be bold and prominent:
 - Choose 2-4 words extracted or paraphrased from the video title
-- The text is ENORMOUS — each letter should be TALLER than the character's head
 - Thick, heavy, blocky Impact-style font with strong black outline/stroke
-- Text appears ONCE only — never duplicate it
-- Layout options (VARY these — don't always use the same one):
-  * Text on LEFT, character on RIGHT
-  * Text on RIGHT, character on LEFT
-  * Text across TOP, character below
-  * Text split TOP and BOTTOM with character in middle
-
-COLOR SCHEMES — Pick one that matches the topic's emotion. Do NOT always use the same colors:
-- DANGER/WARNING: Deep red background + white or yellow text
-- MONEY/GROWTH: Bright green background + white or dark text
-- EXCLUSION/SECRECY: Dark navy background + gold or yellow text
-- SYSTEM/INSTITUTIONAL: Cool gray background + bold red or green text
-- URGENCY/FEAR: Black or charcoal background + red or white text
-- ASPIRATIONAL: White or light background + green or dark blue text
+- Text appears ONCE only
+- Use bold colors: green, red, black, or dark blue text on the white background
+- The text should be large and immediately readable
 
 Good text examples:
 - "What Changes When You Cross the $250K Threshold" → "$250K CHANGES"
@@ -61,43 +49,40 @@ Good text examples:
 
 BANNED text: "EPIC FAIL", "GONE WRONG", "YOU WON'T BELIEVE", "SHOCKING", "OMG", "MIND BLOWN", "EXPOSED", "NOT CLICKBAIT", "SECRET", "WHAT HAPPENED"
 
-CHARACTER — The man from the reference image:
-- CHUNKY, STOCKY cartoon proportions — this is critical for the right style:
-  * Oversized head (about 1/3 of the body height)
-  * Wide, thick neck and broad shoulders
-  * Stocky torso — barrel-chested, not slim
-  * Thick arms and big hands
-  * Simplified, rounded facial features — big round eyes, simple nose, wide mouth
-  * Think: chunky adult animated sitcom character proportions (stocky and exaggerated, NOT slim or anime-like)
-- Thick black outlines (3-4px), smooth cel shading, bold flat colors
-- Head and upper body, filling ~35-40% of the frame
-- EXTREME facial expression — this is critical for clicks:
-  * Mouth WIDE open (jaw dropped to chin), eyes BULGING out, eyebrows shot up to hairline, visible sweat drops
-  * Or: teeth CLENCHED and visible, brow deeply furrowed, eyes narrowed
-  * Or: smug confident smirk with one eyebrow raised, pointing at the viewer (for empowering topics)
-  * The expression must be WILDLY exaggerated — cartoon comedy levels of overreaction
-- Same hair color/style and teal/sage green crewneck sweater as reference
-- He can point at the text, gesture dramatically, hold his head in disbelief, or cross his arms confidently
+ILLUSTRATIVE ELEMENTS — These make the thumbnail informative and eye-catching:
+- Add small icons and illustrations that visually explain the video topic
+- Examples: dollar sign icons ($$$), money bags, bank buildings, upward/downward arrows, bar charts, pie charts, documents, locks, keys, scales of justice, warning triangles, percentage symbols, level/tier markers
+- These should be drawn in the same cartoon style as the character
+- Scatter them around the character or arrange them to tell a visual story
+- Use green for positive/money elements, red for negative/danger elements
+- Keep them simple and iconic — not photorealistic
 
-STRICT BANS:
-- Euro signs (€) — only dollar signs ($) if needed
-- Floating scattered symbols, coins, or decorations
-- Placeholder names like "John Smith"
-- Black bars or letterboxing
-- Any text other than the single overlay phrase
-- Small or secondary text
+CHARACTER — The man from the reference image:
+- Cartoon version of the reference image with thick black outlines and smooth cel shading
+- EXAGGERATED facial expression matching the topic's emotion:
+  * Shock/fear: mouth WIDE open, eyes bulging, eyebrows raised, sweat drops
+  * Anger/frustration: teeth clenched, brow furrowed, eyes narrowed
+  * Confidence/empowerment: smug smirk, one eyebrow raised, pointing at viewer
+- Same hair color/style and teal/sage green crewneck sweater as reference
+- He can point at things, gesture, hold his head, cross arms, or interact with the icons
 
 STYLE:
-- Chunky adult animated cartoon — thick black outlines (3-4px), smooth cel shading, rounded/stocky shapes
-- Character proportions: oversized head, stocky barrel-chested body, thick limbs, big hands
-- Bold flat colors with minimal gradients on the character
-- NOT slim/anime proportions, NOT flat vector, NOT realistic, NOT 3D
+- Bold cartoon — thick black outlines, smooth cel shading
+- WHITE or light background as the default
+- Colorful illustrative icons and elements scattered around
+- Bold, saturated accent colors (green, red, gold) against the white background
+- NOT realistic, NOT 3D
 - High contrast, eye-catching at phone-screen size
 - 16:9 aspect ratio, 1280x720
 
+STRICT BANS:
+- Euro signs (€) — only dollar signs ($)
+- Placeholder names like "John Smith"
+- Black bars or letterboxing
+
 Output format (strictly follow this):
 - First line: EXACT_TEXT: followed by the 2-4 word ALL-CAPS overlay text
-- Second line: the full image generation prompt as a single paragraph. You MUST specify: the exact background color, the text color, the text placement (top/left/right), the character placement, the character expression, and the background prop (if any).
+- Second line: the full image generation prompt as a single paragraph
 - Nothing else"""
 
 
@@ -143,21 +128,19 @@ def generate_thumbnail(
     logger.info(f"Overlay text: {overlay_text}")
     logger.info(f"Thumbnail prompt: {image_prompt[:120]}...")
 
-    # Reinforce clean composition and exact text
+    # Reinforce style and exact text
     reinforcement = (
         'CRITICAL RULES — READ BEFORE GENERATING:\n'
-        '- The character must have CHUNKY STOCKY proportions — oversized head, '
-        'thick neck, barrel chest, big hands. NOT slim or anime-like.\n'
-        '- Maximum elements: one cartoon man, big text, one optional background prop, and a colored background\n'
-        '- NO floating scattered symbols, NO coins, NO euro signs (€)\n'
+        '- WHITE or light background (default)\n'
+        '- Add small illustrative icons/props related to the topic (dollar signs, '
+        'arrows, charts, money bags, etc.) scattered around in the same cartoon style\n'
+        '- NO euro signs (€) — only dollar signs ($)\n'
         '- NO black bars or letterboxing\n'
-        '- NO small text, NO labels, NO secondary text\n'
-        '- The character expression must be WILDLY exaggerated — mouth WIDE open or teeth clenched\n'
     )
     if overlay_text:
         reinforcement += (
-            f'- The ONLY text in this image is "{overlay_text}" — written ONCE in giant '
-            f'bold ALL-CAPS with thick black outline. No other text anywhere.\n'
+            f'- The main overlay text is "{overlay_text}" in bold ALL-CAPS '
+            f'with thick black outline.\n'
         )
     image_prompt = f'{reinforcement}\n{image_prompt}'
 
