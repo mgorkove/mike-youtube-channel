@@ -157,7 +157,9 @@ def upload_video(
         status["publishAt"] = publish_at
         logger.info(f"Video scheduled to publish at {publish_at}")
 
-    # Merge default tags with per-video tags (defaults first, deduplicated)
+    # Merge default tags with per-video tags (defaults first, deduplicated).
+    # YouTube enforces a 500-character total limit for all tags combined.
+    MAX_TAG_CHARS = 500
     all_tags = list(config.youtube_tags)
     if video_tags:
         seen = {t.lower() for t in all_tags}
@@ -165,6 +167,12 @@ def upload_video(
             if t.lower() not in seen:
                 all_tags.append(t)
                 seen.add(t.lower())
+    # Truncate tags to stay within YouTube's 500-char limit
+    total_chars = sum(len(t) for t in all_tags)
+    while all_tags and total_chars > MAX_TAG_CHARS:
+        removed = all_tags.pop()
+        total_chars -= len(removed)
+        logger.debug(f"Dropped tag '{removed}' to stay under {MAX_TAG_CHARS}-char limit")
 
     body = {
         "snippet": {
