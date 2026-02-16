@@ -93,6 +93,7 @@ scheduling:
     - [18, 0]   # 6:00 PM ET
 
 max_parallel_videos: 14
+render_workers: 12
 cleanup_after_upload: true
 
 output:

@@ -76,6 +76,7 @@ class Config:
 
     # Parallelism
     max_parallel_videos: int
+    render_workers: int
 
     # Cleanup
     cleanup_after_upload: bool
@@ -155,6 +156,7 @@ def load_config(config_path: str = "config.yaml") -> Config:
         publish_timezone=raw.get("scheduling", {}).get("timezone", "America/New_York"),
         publish_times=raw.get("scheduling", {}).get("publish_times", [[8, 0], [18, 0]]),
         max_parallel_videos=raw.get("max_parallel_videos", 1),
+        render_workers=raw.get("render_workers", 4),
         cleanup_after_upload=raw.get("cleanup_after_upload", False),
     )
 

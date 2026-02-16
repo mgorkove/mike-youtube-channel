@@ -17,7 +17,7 @@ from config_loader import Config
 
 logger = logging.getLogger(__name__)
 
-MAX_RENDER_WORKERS = 4
+DEFAULT_RENDER_WORKERS = 4
 
 
 def _get_audio_duration(audio_path: Path) -> float:
@@ -118,10 +118,12 @@ def assemble_video(
     num_images = len(image_paths)
     clip_duration = audio_duration / num_images
 
+    render_workers = getattr(config, "render_workers", DEFAULT_RENDER_WORKERS)
+
     logger.info(
         f"Assembling video: {num_images} images, "
         f"{clip_duration:.1f}s each, {audio_duration:.1f}s total, "
-        f"{MAX_RENDER_WORKERS} parallel workers"
+        f"{render_workers} parallel workers"
     )
 
     temp_dir = output_dir / "temp_clips"
@@ -130,7 +132,7 @@ def assemble_video(
     # Render clips in parallel
     clip_paths: dict[int, Path] = {}
 
-    with ThreadPoolExecutor(max_workers=MAX_RENDER_WORKERS) as executor:
+    with ThreadPoolExecutor(max_workers=render_workers) as executor:
         futures = {
             executor.submit(
                 _render_clip,
