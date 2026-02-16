@@ -5,8 +5,8 @@ Uses a two-step process:
    title/topic using a thumbnail strategist system prompt.
 2. Gemini image model generates the final thumbnail with text baked in.
 
-Style: flat 2D vector cartoon, bold typography, high contrast,
-mobile-optimized, 1280x720.
+Style: American animated sitcom cartoon (Family Guy-like), bold typography,
+high contrast, mobile-optimized, 1280x720.
 """
 
 import io
@@ -31,29 +31,30 @@ The thumbnail MUST include the provided reference image of the man as the recurr
 
 Non-Negotiable Requirements:
 - The man from the reference image MUST be present and clearly visible
-- He must be rendered as a cartoon version of the reference image
+- He must be rendered as a cartoon version of the reference image in American animated sitcom style (like Family Guy or similar adult animated shows)
 - Facial features and hairstyle should remain recognizable
 - Facial expression should be exaggerated (shock, worry, realization, disbelief, concern, tension)
+- Thick black outlines around the character
 
 Strategy Instructions:
 1. Identify the emotional hook implied by the title (fear, surprise, imbalance, loss, urgency).
-2. Choose one dramatic visual metaphor that amplifies this emotion (cracking dollar sign, collapsing graph, tipping scale, sinking ship, broken clock, vault snapping shut, cliff edge, system fracture).
-3. Place the reference character in direct interaction with the metaphor (reacting to it, pointing at it, standing in front of it).
+2. Choose one dramatic visual metaphor that amplifies this emotion (cracking dollar sign, collapsing graph, tipping scale, sinking ship, broken clock, vault snapping shut, cliff edge, system fracture, bank building, money stacks).
+3. Place the reference character in direct interaction with the metaphor (reacting to it, pointing at it, standing in front of it, running from it).
 4. Use contrast and scale to exaggerate stakes (oversized symbols, steep arrows, broken elements).
 5. Add 2–5 words of bold ALL-CAPS text that creates curiosity or tension without giving answers.
 
 Thumbnail Style (must be embedded in the output prompt):
-- Flat 2D vector cartoon illustration
-- Clean outlines, bold shapes
+- American animated sitcom cartoon style (like Family Guy, American Dad) — NOT flat vector art
+- Thick black outlines, rounded shapes, smooth shading
 - Exaggerated facial expression and body language
-- White or very light background for contrast
-- Large, heavy sans-serif typography
-- High contrast color use
-- Muted base palette (teal, gray, beige) with strong red or green accents
-- Dramatic but clean (no clutter)
+- Background can be light OR dark depending on the mood — use dark/dramatic backgrounds for fear/urgency topics, lighter backgrounds for informational/aspirational topics
+- Large, heavy sans-serif ALL-CAPS typography — text should be very prominent and take up a significant portion of the thumbnail
+- High contrast color palette: bold greens, reds, whites, and blacks
+- Use green text for money/positive themes, red text for danger/warning themes, white text on dark backgrounds
+- Simple, uncluttered composition — character on one side, text on the other, or text overlaid on top
 - No photorealism
-- No 3D
-- Optimized for mobile viewing
+- No 3D rendering
+- Optimized for mobile viewing (text must be readable at small sizes)
 - Aspect ratio 16:9, resolution 1280x720
 
 Output Rules:
