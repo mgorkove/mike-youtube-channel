@@ -32,19 +32,21 @@ IMPORTANT: The channel already has videos on these topics. Do NOT generate topic
 
 Each new topic must be clearly distinct from all of the above."""
 
-    prompt = f"""You are a YouTube content strategist for a finance education channel.
+    prompt = f"""You are a YouTube content strategist for a finance education channel with 25-34 year old viewers.
 
 Channel theme: {config.channel_theme}
 
 Generate exactly {count} unique video topic ideas. Each topic should:
-- Either directly affect the viewer's personal finances OR be aspirational (e.g., "how the wealthy do X", "what changes when you reach X")
+- Be something a real person would type into YouTube search or click on in their feed
+- Focus on money milestones, wealth-building behaviors, or financial turning points that people actually care about
+- Use specific dollar amounts, ages, or percentages when possible (e.g., "$100K", "before 40", "top 1%")
+- Frame topics around what wealthy/successful people DO or what HAPPENS at certain thresholds — not abstract theory
+- Mix these types: (1) aspirational "how millionaires/wealthy people do X", (2) milestone-based "what changes at $X", (3) eye-opening stats/data, (4) current events and trending financial news
 - NEVER be about abstract institutional mechanics that don't connect to the individual (no dark pools, repo markets, correspondent banking, etc.)
-- Be specific enough to write a full script about
-- Target curiosity gaps that would interest a general audience
-- Focus on hidden mechanisms, thresholds, or behaviors in financial systems that impact real people
+- Be specific enough to write a full 20-minute script about
 {dedup_block}
 Return ONLY a JSON array of topic strings, nothing else. Example:
-["How Banks Decide Who Gets Special Treatment", "The Hidden Math Behind Credit Card Minimum Payments"]"""
+["How people actually retire before 40", "Why everything changes after your first $100K", "How millionaires use debt to avoid paying taxes"]"""
 
     response = client.models.generate_content(
         model=config.text_model_name,
@@ -85,30 +87,35 @@ IMPORTANT: The channel already has these video titles. Your new title must NOT b
 {titles_list}
 """
 
-    prompt = f"""You are writing YouTube video titles for a faceless finance channel focused on money, banking, and power dynamics.
+    prompt = f"""You are writing YouTube video titles for a finance education channel. The titles need to GET CLICKS.
 
 Topic: "{topic}"
 
 Generate ONE YouTube title that:
-- Targets a 25–34 year old audience interested in money, banking, wealth, and financial systems
-- Contains words and phrases people actually search for on YouTube (think: what would someone type?)
-- Creates a curiosity gap — the viewer should feel they NEED to click to understand
-- Sounds analytical and insider-knowledge, not motivational or influencer-style
-- Is descriptive, not prescriptive (no "how to get rich", no advice)
-- Avoids hype words like secrets, hacks, tips, passive income, financial freedom
-- Avoids direct commands or promises
+- Makes someone scrolling YouTube STOP and click — create a strong curiosity gap
+- Contains words and phrases people actually search for on YouTube
+- Uses specific numbers, dollar amounts, or percentages when they add punch ($100K, $1M, 1%, "before 40")
+- Can describe what wealthy people or millionaires DO, or what HAPPENS at certain financial thresholds
+- Can use third-person framing: "How millionaires...", "How people retire before 40...", "Why the wealthy..."
+- Do NOT give direct advice or commands (no "do this", "stop doing X", "you need to")
+- Avoids hype words: secrets, hacks, tips, passive income, financial freedom
 - Is a complete statement — do NOT end with a colon, dash, or ellipsis
 - Keep under 65 characters when possible
+- Use ONE or TWO words in ALL CAPS for emphasis when it feels natural (not every title)
 
-Good title patterns (mix these, don't always use the same one):
-"How the Top 1% Use X as Y"
-"Why Banks Treat X Differently After Y"
+High-performing title patterns (vary these):
+"How Millionaires Use X to Y"
+"Why EVERYTHING Changes After $X"
+"How People Actually Retire Before X"
+"The REAL Reason X Happens at $Y"
 "What Happens to Your Money When X"
-"The Real Reason X Changes at $Y"
-"Why X Is the Most Misunderstood Thing in Finance"
-"How X Actually Works Behind the Scenes"
+"How Many Americans Actually Have $X Saved"
+"Why the Wealthy Never X (And What They Do Instead)"
+"X Jaw-Dropping Money Stats Most People Don't Know"
 
-Use concrete numbers when they add punch (e.g., $100K, $1M, 1%).
+Questions work well too:
+"How Many People ACTUALLY Retire With $1M?"
+"What Happens When You Save $X a Month for Y Years?"
 {dedup_block}
 Return ONLY the title text, nothing else. No quotes, no explanation."""
 
