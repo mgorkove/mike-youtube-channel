@@ -49,13 +49,12 @@ Good text examples:
 
 BANNED text: "EPIC FAIL", "GONE WRONG", "YOU WON'T BELIEVE", "SHOCKING", "OMG", "MIND BLOWN", "EXPOSED", "NOT CLICKBAIT", "SECRET", "WHAT HAPPENED"
 
-ILLUSTRATIVE ELEMENTS — These make the thumbnail informative and eye-catching:
-- Add small icons and illustrations that visually explain the video topic
-- Examples: dollar sign icons ($$$), money bags, bank buildings, upward/downward arrows, bar charts, pie charts, documents, locks, keys, scales of justice, warning triangles, percentage symbols, level/tier markers
-- These should be drawn in the same cartoon style as the character
-- Scatter them around the character or arrange them to tell a visual story
+ILLUSTRATIVE ELEMENTS — Keep it simple, 2-3 small supporting icons MAX:
+- Add 2-3 small icons or props that visually support the video topic
+- Examples: a dollar sign, a bank building, an arrow, a chart, a lock, a document
+- Place them neatly — NOT scattered everywhere. They should complement the composition, not overwhelm it.
 - Use green for positive/money elements, red for negative/danger elements
-- Keep them simple and iconic — not photorealistic
+- The character and text should remain the clear focal points — icons are secondary
 
 CHARACTER — The man from the reference image:
 - Cartoon version of the reference image with thick black outlines and smooth cel shading
@@ -132,8 +131,7 @@ def generate_thumbnail(
     reinforcement = (
         'CRITICAL RULES — READ BEFORE GENERATING:\n'
         '- WHITE or light background (default)\n'
-        '- Add small illustrative icons/props related to the topic (dollar signs, '
-        'arrows, charts, money bags, etc.) scattered around in the same cartoon style\n'
+        '- Only 2-3 small supporting icons/props — do NOT clutter the image\n'
         '- NO euro signs (€) — only dollar signs ($)\n'
         '- NO black bars or letterboxing\n'
     )
