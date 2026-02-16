@@ -26,7 +26,7 @@ THUMBNAIL_STRATEGIST_PROMPT = """You are an elite YouTube thumbnail strategist. 
 Generate ONE image-generation prompt for a YouTube thumbnail based on the video title/topic.
 
 LAYOUT — The thumbnail has exactly these elements:
-1. GIANT TEXT (the dominant element — takes up ~40-50% of the frame)
+1. GIANT TEXT (the dominant element — takes up ~50-60% of the frame)
 2. The cartoon man from the reference image (head and upper body, ~35-40% of frame)
 3. ONE simple background prop related to the topic (optional but encouraged — e.g., a bank vault door, a red cliff edge, a locked gate, a giant dollar sign, a cracking chart). This prop should be BEHIND or BESIDE the character, never in front. Keep it simple and recognizable as a single shape.
 4. A clean, bold background color
@@ -35,7 +35,7 @@ CRITICAL: Every thumbnail on this channel must look DIFFERENT from the others. V
 
 TEXT — The #1 most important element:
 - Choose 2-4 words extracted or paraphrased from the video title
-- The text is HUGE — each letter should be roughly the same height as the character's head
+- The text is ENORMOUS — each letter should be TALLER than the character's head
 - Thick, heavy, blocky Impact-style font with strong black outline/stroke
 - Text appears ONCE only — never duplicate it
 - Layout options (VARY these — don't always use the same one):
@@ -62,14 +62,21 @@ Good text examples:
 BANNED text: "EPIC FAIL", "GONE WRONG", "YOU WON'T BELIEVE", "SHOCKING", "OMG", "MIND BLOWN", "EXPOSED", "NOT CLICKBAIT", "SECRET", "WHAT HAPPENED"
 
 CHARACTER — The man from the reference image:
-- Bold adult animated cartoon style — thick black outlines, smooth cel shading
+- CHUNKY, STOCKY cartoon proportions — this is critical for the right style:
+  * Oversized head (about 1/3 of the body height)
+  * Wide, thick neck and broad shoulders
+  * Stocky torso — barrel-chested, not slim
+  * Thick arms and big hands
+  * Simplified, rounded facial features — big round eyes, simple nose, wide mouth
+  * Think: chunky adult animated sitcom character proportions (stocky and exaggerated, NOT slim or anime-like)
+- Thick black outlines (3-4px), smooth cel shading, bold flat colors
 - Head and upper body, filling ~35-40% of the frame
 - EXTREME facial expression — this is critical for clicks:
   * Mouth WIDE open (jaw dropped to chin), eyes BULGING out, eyebrows shot up to hairline, visible sweat drops
-  * Or: teeth CLENCHED and visible, brow deeply furrowed, eyes narrowed, veins on forehead
+  * Or: teeth CLENCHED and visible, brow deeply furrowed, eyes narrowed
   * Or: smug confident smirk with one eyebrow raised, pointing at the viewer (for empowering topics)
-  * Pick the expression that matches the topic's emotion. The expression must be WILDLY exaggerated — think cartoon comedy levels of overreaction
-- Same hair, face shape, and teal/sage green crewneck sweater as reference
+  * The expression must be WILDLY exaggerated — cartoon comedy levels of overreaction
+- Same hair color/style and teal/sage green crewneck sweater as reference
 - He can point at the text, gesture dramatically, hold his head in disbelief, or cross his arms confidently
 
 STRICT BANS:
@@ -81,8 +88,10 @@ STRICT BANS:
 - Small or secondary text
 
 STYLE:
-- Bold adult animated cartoon — thick black outlines, smooth cel shading, rounded shapes
-- NOT flat vector, NOT realistic, NOT 3D
+- Chunky adult animated cartoon — thick black outlines (3-4px), smooth cel shading, rounded/stocky shapes
+- Character proportions: oversized head, stocky barrel-chested body, thick limbs, big hands
+- Bold flat colors with minimal gradients on the character
+- NOT slim/anime proportions, NOT flat vector, NOT realistic, NOT 3D
 - High contrast, eye-catching at phone-screen size
 - 16:9 aspect ratio, 1280x720
 
@@ -137,6 +146,8 @@ def generate_thumbnail(
     # Reinforce clean composition and exact text
     reinforcement = (
         'CRITICAL RULES — READ BEFORE GENERATING:\n'
+        '- The character must have CHUNKY STOCKY proportions — oversized head, '
+        'thick neck, barrel chest, big hands. NOT slim or anime-like.\n'
         '- Maximum elements: one cartoon man, big text, one optional background prop, and a colored background\n'
         '- NO floating scattered symbols, NO coins, NO euro signs (€)\n'
         '- NO black bars or letterboxing\n'
