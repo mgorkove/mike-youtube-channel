@@ -132,6 +132,7 @@ def upload_video(
     thumbnail_path: Path,
     config: Config,
     publish_at: str | None = None,
+    video_tags: list[str] | None = None,
 ) -> UploadResult:
     """Upload a video to YouTube with metadata and custom thumbnail.
 
@@ -156,11 +157,20 @@ def upload_video(
         status["publishAt"] = publish_at
         logger.info(f"Video scheduled to publish at {publish_at}")
 
+    # Merge default tags with per-video tags (defaults first, deduplicated)
+    all_tags = list(config.youtube_tags)
+    if video_tags:
+        seen = {t.lower() for t in all_tags}
+        for t in video_tags:
+            if t.lower() not in seen:
+                all_tags.append(t)
+                seen.add(t.lower())
+
     body = {
         "snippet": {
             "title": title,
             "description": description,
-            "tags": config.youtube_tags,
+            "tags": all_tags,
             "categoryId": config.youtube_category_id,
             "defaultLanguage": "en",
             "defaultAudioLanguage": "en",

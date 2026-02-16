@@ -90,24 +90,25 @@ IMPORTANT: The channel already has these video titles. Your new title must NOT b
 Topic: "{topic}"
 
 Generate ONE YouTube title that:
-- Targets a 25–34 year old audience
-- Focuses on money, banking behavior, financial systems, wealth thresholds, risk, and power
-- Implies hidden rules, asymmetry, or system advantages
-- Sounds analytical and institutional, not motivational or influencer-style
-- Is descriptive, not prescriptive (no "how to", no advice)
+- Targets a 25–34 year old audience interested in money, banking, wealth, and financial systems
+- Contains words and phrases people actually search for on YouTube (think: what would someone type?)
+- Creates a curiosity gap — the viewer should feel they NEED to click to understand
+- Sounds analytical and insider-knowledge, not motivational or influencer-style
+- Is descriptive, not prescriptive (no "how to get rich", no advice)
 - Avoids hype words like secrets, hacks, tips, passive income, financial freedom
 - Avoids direct commands or promises
 - Is a complete statement — do NOT end with a colon, dash, or ellipsis
-- Keep under 60 characters when possible
+- Keep under 65 characters when possible
 
-Preferred title patterns:
-"What Changes When X"
-"The Threshold Where X Happens"
-"Why X Is Treated Differently"
-"The Quiet Rules Behind X"
-"How the System Views X"
+Good title patterns (mix these, don't always use the same one):
+"How the Top 1% Use X as Y"
+"Why Banks Treat X Differently After Y"
+"What Happens to Your Money When X"
+"The Real Reason X Changes at $Y"
+"Why X Is the Most Misunderstood Thing in Finance"
+"How X Actually Works Behind the Scenes"
 
-Use concrete numbers sparingly (e.g., $100K, $1M).
+Use concrete numbers when they add punch (e.g., $100K, $1M, 1%).
 {dedup_block}
 Return ONLY the title text, nothing else. No quotes, no explanation."""
 
@@ -181,14 +182,15 @@ Title: "{title}"
 Topic: "{topic}"
 
 Requirements:
-1. Write ONE short paragraph (3-4 sentences max) that summarizes the video and hooks the viewer.
-2. Naturally weave ALL of these keywords into that paragraph: {keywords_str}
-3. After the paragraph, add 3-5 relevant hashtags on a new line.
-4. End with this exact disclaimer (copy it verbatim):
+1. Start with a strong 2-3 sentence hook that makes people want to watch. Front-load the most searchable keywords.
+2. Add a blank line, then a "In this video:" section with 4-6 bullet points summarizing key topics covered. Each bullet should contain searchable phrases people would type into YouTube.
+3. Add a blank line, then a "Key topics:" line listing 5-8 comma-separated keyword phrases relevant to this specific video (these help YouTube's search algorithm).
+4. Add a blank line, then 5-8 relevant hashtags.
+5. End with this exact disclaimer (copy it verbatim):
 
 {config.disclaimer}
 
-IMPORTANT: The description body must be a single paragraph — no bullet points, no sections, no headers, no line breaks within it. Just one compelling paragraph, then hashtags, then the disclaimer.
+Naturally weave these keywords into the hook paragraph: {keywords_str}
 
 Return ONLY the description text, ready to paste into YouTube."""
 
@@ -201,6 +203,64 @@ Return ONLY the description text, ready to paste into YouTube."""
         ),
     )
     return response.text.strip()
+
+
+def generate_tags(
+    topic: str,
+    title: str,
+    config: Config,
+    client: genai.Client,
+) -> list[str]:
+    """Generate topic-specific YouTube tags for a video."""
+    default_tags = ", ".join(config.youtube_tags)
+
+    prompt = f"""You are a YouTube SEO specialist for a finance education channel.
+
+Video title: "{title}"
+Topic: "{topic}"
+
+Generate 15-20 YouTube tags that will help this specific video rank in search. Include:
+- Exact phrases people would type into YouTube search to find this video
+- Long-tail keyword variations (3-5 word phrases)
+- Related subtopics and questions viewers might search
+- Do NOT include single generic words like "money" or "finance" — those are already covered
+
+The channel already uses these default tags: {default_tags}
+Do NOT repeat any of those. Only generate NEW tags specific to this video's topic.
+
+Return ONLY a JSON array of tag strings, nothing else. Example:
+["life insurance wealth strategy", "infinite banking concept explained", "whole life insurance cash value", "how rich people use life insurance"]"""
+
+    response = client.models.generate_content(
+        model=config.text_model_name,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            temperature=0.7,
+            max_output_tokens=2048,
+        ),
+    )
+
+    text = response.text.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1]
+        if text.endswith("```"):
+            text = text[: text.rfind("```")]
+        text = text.strip()
+
+    tags = json.loads(text)
+    if not isinstance(tags, list):
+        raise ValueError(f"Expected JSON array of tags, got: {type(tags)}")
+
+    # YouTube allows max 500 characters total for tags; trim if needed
+    result = []
+    total_len = 0
+    for tag in tags:
+        tag = tag.strip()
+        if total_len + len(tag) + 1 > 480:  # leave room for default tags
+            break
+        result.append(tag)
+        total_len += len(tag) + 1
+    return result
 
 
 def extract_image_prompts(

@@ -317,6 +317,22 @@ def _process_single_video(
         ckpt.mark_done("description")
         logger.info("Description generated")
 
+    # --- Stage 3b: Tags ---
+    tags_path = output_dir / "tags.json"
+    if ckpt.is_done("tags") and tags_path.exists():
+        video_tags = json.loads(tags_path.read_text(encoding="utf-8"))
+        logger.info(f"Stage 3b: Loaded {len(video_tags)} cached tags")
+    else:
+        logger.info("Stage 3b: Generating per-video tags...")
+        video_tags = _retry_on_error(
+            fn=lambda: text.generate_tags(topic, title, config, client),
+            stage_name="tags",
+            config=config,
+        )
+        _save_artifact(tags_path, json.dumps(video_tags, indent=2))
+        ckpt.mark_done("tags")
+        logger.info(f"Tags: {len(video_tags)} generated")
+
     # --- Stage 4: Voiceover ---
     audio_path = output_dir / "audio.wav"
     if ckpt.is_done("voiceover") and audio_path.exists():
@@ -455,6 +471,7 @@ def _process_single_video(
             fn=lambda: youtube.upload_video(
                 video_path, title, description, thumb_path, config,
                 publish_at=publish_at,
+                video_tags=video_tags,
             ),
             stage_name="upload",
             config=config,
