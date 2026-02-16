@@ -213,16 +213,19 @@ def upload_video(
     # This uses the videos.update endpoint to set monetization status.
     # It will silently fail if the channel is not in YPP — this is expected.
     try:
+        update_status: dict = {
+            "privacyStatus": "private" if publish_at else config.youtube_privacy_status,
+            "selfDeclaredMadeForKids": False,
+            "license": "youtube",  # standard YouTube license
+            "publicStatsViewable": True,
+        }
+        if publish_at:
+            update_status["publishAt"] = publish_at
         service.videos().update(
             part="status",
             body={
                 "id": video_id,
-                "status": {
-                    "privacyStatus": config.youtube_privacy_status,
-                    "selfDeclaredMadeForKids": False,
-                    "license": "youtube",  # standard YouTube license
-                    "publicStatsViewable": True,
-                },
+                "status": update_status,
             },
         ).execute()
         logger.info("Video status updated (monetization-ready)")

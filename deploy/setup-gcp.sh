@@ -18,7 +18,7 @@ PROJECT="${GCP_PROJECT:?Set GCP_PROJECT env var}"
 REGION="us-central1"
 ZONE="us-central1-a"
 VM_NAME="video-pipeline"
-MACHINE_TYPE="c2d-standard-112"
+MACHINE_TYPE="c3d-standard-360"
 DISK_SIZE="100"
 SERVICE_ACCOUNT_NAME="video-pipeline-sa"
 
