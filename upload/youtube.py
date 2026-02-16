@@ -64,7 +64,7 @@ def get_youtube_service(config: Config):
             logger.info("Using YouTube credentials from environment variables")
 
     if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
+        if creds and creds.refresh_token:
             creds.refresh(Request())
         else:
             # 3. Fall back to browser-based flow (local development)
