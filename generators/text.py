@@ -32,22 +32,22 @@ IMPORTANT: The channel already has videos on these topics. Do NOT generate topic
 
 Each new topic must be clearly distinct from all of the above."""
 
-    prompt = f"""You are a YouTube content strategist for a finance education channel. The audience is 20-40 year olds building wealth, paying off debt, or trying to get ahead financially.
+    prompt = f"""You are a YouTube content strategist for a finance education channel. The audience is 25-35 year olds building wealth, paying off debt, or trying to get ahead financially.
 
 Channel theme: {config.channel_theme}
 
 Generate exactly {count} unique video topic ideas. Each topic should:
-- Be something a 20-40 year old would type into YouTube search or click on in their feed
-- Focus on money milestones, wealth-building behaviors, or financial turning points relevant to people UNDER 40
-- Use specific dollar amounts, ages, or percentages when possible (e.g., "$100K", "before 30", "in your 20s", "top 1%")
+- Be something a 25-35 year old would type into YouTube search or click on in their feed
+- Focus on money milestones, wealth-building behaviors, or financial turning points relevant to people in their late 20s and early 30s
+- Use specific dollar amounts, ages, or percentages when possible (e.g., "$100K", "by 30", "in your late 20s", "top 1%")
 - Frame topics around what wealthy/successful people DO or what HAPPENS at certain thresholds — not abstract theory
-- Speak to life stages under 40: first real job, paying off student loans, buying a first home, starting to invest, hitting $100K, career switching, starting a family on a budget, salary negotiation, building credit
-- Mix these types: (1) aspirational "how young millionaires/wealthy people do X", (2) milestone-based "what changes at $X", (3) eye-opening stats about people under 40, (4) generational money topics (Gen Z, millennials vs boomers), (5) current events and trending financial news
+- Speak to 25-35 life stages: paying off student loans, buying a first home, starting to invest seriously, hitting $100K saved, career switching, salary negotiation, building credit, side income, starting a family on a budget, feeling behind financially
+- Mix these types: (1) aspirational "how young millionaires/wealthy people do X", (2) milestone-based "what changes at $X", (3) eye-opening stats about millennials and Gen Z, (4) generational money comparisons (millennials vs boomers at the same age), (5) current events and trending financial news
 - NEVER be about retirement planning for 60-year-olds or abstract institutional mechanics (no dark pools, repo markets, correspondent banking, etc.)
 - Be specific enough to write a full 20-minute script about
 {dedup_block}
 Return ONLY a JSON array of topic strings, nothing else. Example:
-["How people actually retire before 40", "Why your first $100K changes everything in your 20s", "How millennials are building wealth differently than their parents"]"""
+["How people actually retire before 40", "Why your first $100K changes everything in your late 20s", "How millennials are building wealth differently than their parents"]"""
 
     response = client.models.generate_content(
         model=config.text_model_name,
@@ -88,17 +88,17 @@ IMPORTANT: The channel already has these video titles. Your new title must NOT b
 {titles_list}
 """
 
-    prompt = f"""You are writing YouTube video titles for a finance channel targeting 20-40 year olds. The titles need to GET CLICKS.
+    prompt = f"""You are writing YouTube video titles for a finance channel targeting 25-35 year olds. The titles need to GET CLICKS.
 
 Topic: "{topic}"
 
 Generate ONE YouTube title that:
-- Makes a 20-40 year old scrolling YouTube STOP and click — create a strong curiosity gap
+- Makes a 25-35 year old scrolling YouTube STOP and click — create a strong curiosity gap
 - Contains words and phrases people actually search for on YouTube
-- Uses specific numbers, dollar amounts, ages, or percentages ($100K, $1M, 1%, "before 30", "in your 20s")
+- Uses specific numbers, dollar amounts, ages, or percentages ($100K, $1M, 1%, "by 30", "in your late 20s")
 - Can describe what wealthy people or millionaires DO, or what HAPPENS at certain financial thresholds
 - Can use third-person framing: "How millionaires...", "How people retire before 40...", "Why the wealthy..."
-- Can reference age or generation when relevant: "in your 20s", "before 30", "Gen Z", "millennials"
+- Can reference age or generation when relevant: "by 30", "in your late 20s", "before 35", "millennials"
 - Do NOT give direct advice or commands (no "do this", "stop doing X", "you need to")
 - Avoids hype words: secrets, hacks, tips, passive income, financial freedom
 - Is a complete statement — do NOT end with a colon, dash, or ellipsis
@@ -111,9 +111,9 @@ High-performing title patterns (vary these):
 "How People Actually Retire Before 40"
 "The REAL Reason X Happens at $Y"
 "What Happens to Your Money When X"
-"How Many Americans Under 40 Actually Have $X Saved"
+"How Many 30 Year Olds Actually Have $X Saved"
 "Why the Wealthy Never X (And What They Do Instead)"
-"X Jaw-Dropping Money Stats About People in Their 20s"
+"X Jaw-Dropping Money Stats About Millennials"
 "Why Most People Are BROKE by 30 (The Math Is Brutal)"
 
 Questions work well too:
