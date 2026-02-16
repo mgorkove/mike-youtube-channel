@@ -13,8 +13,10 @@ import json
 import logging
 import math
 import re
+import shutil
 import time
 import wave
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -24,6 +26,7 @@ from assembly import video
 from config_loader import Config
 from generators import images, speech, text, thumbnail
 from quality import checks
+from scheduling import compute_publish_schedule
 from upload import youtube
 
 logger = logging.getLogger(__name__)
@@ -135,32 +138,95 @@ def run(config: Config) -> list[VideoResult]:
     # Match manual titles to topics (if provided)
     manual_titles = config.titles or []
 
-    logger.info(f"Processing {len(topics)} video(s)")
-    for i, topic in enumerate(topics):
-        logger.info(f"\n{'='*60}")
-        logger.info(f"Video {i + 1}/{len(topics)}: {topic}")
-        logger.info(f"{'='*60}")
+    # Compute publish schedule (Mon–Sun, 2/day at configured times)
+    if not config.dry_run:
+        schedule = compute_publish_schedule(
+            video_count=len(topics),
+            timezone=config.publish_timezone,
+            publish_times=config.publish_times,
+        )
+        for i, dt in enumerate(schedule):
+            logger.info(f"  Video {i + 1} scheduled for: {dt}")
+    else:
+        schedule = [None] * len(topics)
 
-        manual_title = manual_titles[i] if i < len(manual_titles) else None
-        try:
-            result = _process_single_video(
-                topic, config, client, manual_title=manual_title,
-                existing_titles=existing_titles,
-            )
-            results.append(result)
-            logger.info(f"Completed: {result.video_url or 'dry-run'}")
-        except Exception as e:
-            logger.error(f"Failed to process '{topic}': {e}", exc_info=True)
-            results.append(
-                VideoResult(
-                    topic=topic,
-                    title="",
-                    video_id=None,
-                    video_url=None,
-                    success=False,
-                    error=str(e),
+    max_workers = min(config.max_parallel_videos, len(topics))
+    logger.info(f"Processing {len(topics)} video(s) with {max_workers} worker(s)")
+
+    if max_workers <= 1:
+        # Sequential (original behavior)
+        for i, topic in enumerate(topics):
+            logger.info(f"\n{'='*60}")
+            logger.info(f"Video {i + 1}/{len(topics)}: {topic}")
+            logger.info(f"{'='*60}")
+
+            manual_title = manual_titles[i] if i < len(manual_titles) else None
+            try:
+                result = _process_single_video(
+                    topic, config, client, manual_title=manual_title,
+                    existing_titles=existing_titles,
+                    publish_at=schedule[i],
                 )
-            )
+                results.append(result)
+                logger.info(f"Completed: {result.video_url or 'dry-run'}")
+            except Exception as e:
+                logger.error(f"Failed to process '{topic}': {e}", exc_info=True)
+                results.append(
+                    VideoResult(
+                        topic=topic, title="", video_id=None, video_url=None,
+                        success=False, error=str(e),
+                    )
+                )
+    else:
+        # Parallel execution
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_idx = {}
+            for i, topic in enumerate(topics):
+                manual_title = manual_titles[i] if i < len(manual_titles) else None
+                # Each thread gets its own genai client
+                thread_client = genai.Client()
+                future = executor.submit(
+                    _process_single_video,
+                    topic, config, thread_client,
+                    manual_title=manual_title,
+                    existing_titles=existing_titles,
+                    publish_at=schedule[i],
+                )
+                future_to_idx[future] = (i, topic)
+
+            # Collect results in submission order
+            indexed_results: dict[int, VideoResult] = {}
+            for future in as_completed(future_to_idx):
+                idx, topic = future_to_idx[future]
+                try:
+                    result = future.result()
+                    indexed_results[idx] = result
+                    logger.info(f"Completed video {idx + 1}: {result.video_url or 'dry-run'}")
+                except Exception as e:
+                    logger.error(f"Failed video {idx + 1} '{topic}': {e}", exc_info=True)
+                    indexed_results[idx] = VideoResult(
+                        topic=topic, title="", video_id=None, video_url=None,
+                        success=False, error=str(e),
+                    )
+
+            results = [indexed_results[i] for i in range(len(topics))]
+
+    # Write results.json
+    results_data = [
+        {
+            "topic": r.topic,
+            "title": r.title,
+            "video_id": r.video_id,
+            "video_url": r.video_url,
+            "success": r.success,
+            "error": r.error,
+        }
+        for r in results
+    ]
+    results_path = config.output_base_dir / "results.json"
+    results_path.parent.mkdir(parents=True, exist_ok=True)
+    results_path.write_text(json.dumps(results_data, indent=2), encoding="utf-8")
+    logger.info(f"Results written to {results_path}")
 
     # Summary
     succeeded = sum(1 for r in results if r.success)
@@ -179,6 +245,7 @@ def _process_single_video(
     manual_title: str | None = None,
     output_dir_override: Path | None = None,
     existing_titles: list[str] | None = None,
+    publish_at: str | None = None,
 ) -> VideoResult:
     """Process a single video through all pipeline stages.
 
@@ -386,7 +453,8 @@ def _process_single_video(
         logger.info("Stage 9: Uploading to YouTube...")
         upload_result = _retry_on_error(
             fn=lambda: youtube.upload_video(
-                video_path, title, description, thumb_path, config
+                video_path, title, description, thumb_path, config,
+                publish_at=publish_at,
             ),
             stage_name="upload",
             config=config,
@@ -395,6 +463,18 @@ def _process_single_video(
         video_url = upload_result.video_url
         ckpt.mark_done("upload", video_id=video_id, video_url=video_url)
         logger.info(f"Uploaded: {video_url}")
+
+    # --- Stage 10: Cleanup ---
+    if not config.dry_run and video_url and config.cleanup_after_upload:
+        logger.info("Stage 10: Cleaning up large output files...")
+        for item in output_dir.iterdir():
+            if item.name in ("metadata.json", "checkpoint.json"):
+                continue
+            if item.is_dir():
+                shutil.rmtree(item)
+            elif item.suffix in (".mp4", ".wav"):
+                item.unlink()
+        logger.info("Cleanup complete")
 
     # --- Save metadata ---
     metadata = {

@@ -9,6 +9,9 @@ output/
 # Logs
 pipeline.log
 
+# Temp video files
+videoTEMP_*.mp4
+
 # Python
 __pycache__/
 *.pyc

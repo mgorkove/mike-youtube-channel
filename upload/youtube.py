@@ -5,6 +5,7 @@ thumbnail setting, and metadata configuration.
 """
 
 import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -33,19 +34,40 @@ class UploadResult:
 def get_youtube_service(config: Config):
     """Build an authenticated YouTube API v3 service.
 
-    Checks for cached credentials first. If expired, refreshes.
-    If missing, runs the OAuth2 flow (opens browser on first run).
+    Tries credentials in order:
+    1. Cached token file (``youtube_token.json``)
+    2. Environment variables (``YOUTUBE_CLIENT_ID``, ``YOUTUBE_CLIENT_SECRET``,
+       ``YOUTUBE_REFRESH_TOKEN``) — for headless/cloud environments
+    3. Browser-based OAuth2 flow (local development only)
     """
     creds = None
     token_path = Path(config.youtube_token_file)
 
+    # 1. Try cached token file
     if token_path.exists():
         creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
+
+    # 2. Try environment variables (headless mode)
+    if not creds or not creds.valid:
+        client_id = os.environ.get("YOUTUBE_CLIENT_ID")
+        client_secret = os.environ.get("YOUTUBE_CLIENT_SECRET")
+        refresh_token = os.environ.get("YOUTUBE_REFRESH_TOKEN")
+        if client_id and client_secret and refresh_token:
+            creds = Credentials(
+                token=None,
+                refresh_token=refresh_token,
+                client_id=client_id,
+                client_secret=client_secret,
+                token_uri="https://oauth2.googleapis.com/token",
+                scopes=SCOPES,
+            )
+            logger.info("Using YouTube credentials from environment variables")
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
+            # 3. Fall back to browser-based flow (local development)
             secrets_path = Path(config.youtube_client_secrets)
             if not secrets_path.exists():
                 raise FileNotFoundError(
@@ -109,12 +131,30 @@ def upload_video(
     description: str,
     thumbnail_path: Path,
     config: Config,
+    publish_at: str | None = None,
 ) -> UploadResult:
     """Upload a video to YouTube with metadata and custom thumbnail.
 
     Uses resumable upload for reliability on large files.
+
+    Parameters
+    ----------
+    publish_at:
+        Optional ISO 8601 UTC datetime (e.g. ``"2026-02-16T13:00:00Z"``).
+        When provided, the video is uploaded as *private* and scheduled to
+        go public at this time.  Requires ``privacyStatus`` to be
+        ``"private"``.
     """
     service = get_youtube_service(config)
+
+    status: dict = {
+        "privacyStatus": config.youtube_privacy_status,
+        "selfDeclaredMadeForKids": False,
+    }
+    if publish_at:
+        status["privacyStatus"] = "private"
+        status["publishAt"] = publish_at
+        logger.info(f"Video scheduled to publish at {publish_at}")
 
     body = {
         "snippet": {
@@ -125,10 +165,7 @@ def upload_video(
             "defaultLanguage": "en",
             "defaultAudioLanguage": "en",
         },
-        "status": {
-            "privacyStatus": config.youtube_privacy_status,
-            "selfDeclaredMadeForKids": False,
-        },
+        "status": status,
     }
 
     media = MediaFileUpload(

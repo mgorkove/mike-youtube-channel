@@ -70,6 +70,16 @@ class Config:
     # Script generation prompt
     script_generation_prompt: str
 
+    # Scheduling
+    publish_timezone: str
+    publish_times: list[list[int]]
+
+    # Parallelism
+    max_parallel_videos: int
+
+    # Cleanup
+    cleanup_after_upload: bool
+
     # Manual titles (one per topic, in order; empty = auto-generate)
     titles: list[str] = None
 
@@ -142,6 +152,10 @@ def load_config(config_path: str = "config.yaml") -> Config:
         retry_max_delay=raw["retry"]["max_delay_seconds"],
         output_base_dir=Path(raw["output"]["base_dir"]),
         script_generation_prompt=script_prompt,
+        publish_timezone=raw.get("scheduling", {}).get("timezone", "America/New_York"),
+        publish_times=raw.get("scheduling", {}).get("publish_times", [[8, 0], [18, 0]]),
+        max_parallel_videos=raw.get("max_parallel_videos", 1),
+        cleanup_after_upload=raw.get("cleanup_after_upload", False),
     )
 
     return config

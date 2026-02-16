@@ -1,4 +1,4 @@
-video_count: 5
+video_count: 14
 
 channel:
   theme: >
@@ -92,8 +92,8 @@ scheduling:
     - [8, 0]    # 8:00 AM ET
     - [18, 0]   # 6:00 PM ET
 
-max_parallel_videos: 1
-cleanup_after_upload: false
+max_parallel_videos: 14
+cleanup_after_upload: true
 
 output:
   base_dir: "output"

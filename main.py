@@ -158,6 +158,9 @@ def main() -> None:
     succeeded = sum(1 for r in results if r.success)
     print(f"Total: {succeeded}/{len(results)} succeeded")
 
+    if succeeded < len(results):
+        sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
