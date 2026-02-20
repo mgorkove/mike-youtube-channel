@@ -233,9 +233,10 @@ def generate_tags(
 Video title: "{title}"
 Topic: "{topic}"
 
-Generate 15-20 YouTube tags that will help this specific video rank in search. Include:
+Generate 10-15 YouTube tags that will help this specific video rank in search. Include:
 - Exact phrases people would type into YouTube search to find this video
-- Long-tail keyword variations (3-5 word phrases)
+- Short keyword phrases (2-4 words each)
+- EVERY tag MUST be 30 characters or fewer — YouTube rejects longer tags
 - Related subtopics and questions viewers might search
 - Do NOT include single generic words like "money" or "finance" — those are already covered
 
@@ -243,7 +244,7 @@ The channel already uses these default tags: {default_tags}
 Do NOT repeat any of those. Only generate NEW tags specific to this video's topic.
 
 Return ONLY a JSON array of tag strings, nothing else. Example:
-["life insurance wealth strategy", "infinite banking concept explained", "whole life insurance cash value", "how rich people use life insurance"]"""
+["life insurance strategy", "infinite banking explained", "whole life cash value", "rich people insurance"]"""
 
     response = client.models.generate_content(
         model=config.text_model_name,
