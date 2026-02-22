@@ -2,6 +2,10 @@
 .env
 client_secrets.json
 youtube_token.json
+youtube_token_heartbreak.json
+
+# Bundled binaries (download via deploy/setup script)
+bin/
 
 # Output artifacts
 output/

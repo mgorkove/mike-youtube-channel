@@ -32,24 +32,19 @@ IMPORTANT: The channel already has videos on these topics. Do NOT generate topic
 
 Each new topic must be clearly distinct from all of the above."""
 
-    prompt = f"""You are a YouTube content strategist for a finance education channel. The audience is 20-40 year olds building wealth, paying off debt, or trying to get ahead financially.
+    prompt = f"""You are a YouTube content strategist. Your job is to generate video topics that match this channel's theme and will get clicks.
 
 Channel theme: {config.channel_theme}
 
 Generate exactly {count} unique video topic ideas. Each topic should:
-- Be something a 20-40 year old would type into YouTube search or click on in their feed
-- Focus on money milestones, wealth-building behaviors, or financial turning points that people actually care about
-- Use specific dollar amounts, ages, or percentages when possible (e.g., "$100K", "before 40", "top 1%")
-- Frame topics around what wealthy/successful people DO or what HAPPENS at certain thresholds — not abstract theory
-- Speak to wealth-building life stages: paying off student loans, buying a first home, starting to invest, hitting $100K, career switching, salary negotiation, building credit, side income, starting a family on a budget
-- Mix these types: (1) aspirational "how millionaires/wealthy people do X", (2) milestone-based "what changes at $X", (3) eye-opening stats/data, (4) generational money topics (Gen Z, millennials vs boomers), (5) current events and trending financial news
-- NEVER target retirees or people over 60 — no Social Security optimization, Medicare, RMDs, or "how to live on a fixed income"
+- Be something people would type into YouTube search or click on in their feed
+- Match the channel's theme and tone exactly
+- Be specific enough to write a full script about
+- Create curiosity or emotional pull — the viewer should NEED to know what happens
 - NEVER reference specific years (no "in 2024", "in 2025", "in 2026") — keep topics evergreen
-- NEVER be about abstract institutional mechanics (no dark pools, repo markets, correspondent banking, etc.)
-- Be specific enough to write a full 20-minute script about
+- Each topic should be distinct and cover a different angle or scenario
 {dedup_block}
-Return ONLY a JSON array of topic strings, nothing else. Example:
-["How people actually retire before 40", "Why everything changes after your first $100K", "How millionaires use debt to avoid paying taxes"]"""
+Return ONLY a JSON array of topic strings, nothing else."""
 
     response = client.models.generate_content(
         model=config.text_model_name,
@@ -90,39 +85,26 @@ IMPORTANT: The channel already has these video titles. Your new title must NOT b
 {titles_list}
 """
 
-    prompt = f"""You are writing YouTube video titles for a finance channel targeting 20-40 year olds. The titles need to GET CLICKS.
+    if config.title_generation_prompt:
+        # Use channel-specific title prompt
+        prompt = config.title_generation_prompt.replace("[TOPIC]", topic)
+        prompt += dedup_block
+    else:
+        # Default generic title prompt
+        prompt = f"""You are writing YouTube video titles. The titles need to GET CLICKS.
+
+Channel theme: {config.channel_theme}
 
 Topic: "{topic}"
 
 Generate ONE YouTube title that:
 - Makes someone scrolling YouTube STOP and click — create a strong curiosity gap
 - Contains words and phrases people actually search for on YouTube
-- Uses specific numbers, dollar amounts, or percentages when they add punch ($100K, $1M, 1%, "before 40")
-- Can describe what wealthy people or millionaires DO, or what HAPPENS at certain financial thresholds
-- Can use third-person framing: "How millionaires...", "How people retire before 40...", "Why the wealthy..."
-- Can reference age or generation when relevant: "before 40", "Gen Z", "millennials"
-- Do NOT give direct advice or commands (no "do this", "stop doing X", "you need to")
-- Do NOT target retirees or seniors — no Social Security, Medicare, or "after 65" framing
+- Matches the channel's tone and style
+- Is a complete statement
+- Keep under 70 characters when possible
+- Use ONE or TWO words in ALL CAPS for emphasis when it feels natural
 - Do NOT reference specific years (no "in 2024", "in 2025", "in 2026") — keep titles evergreen
-- Avoids hype words: secrets, hacks, tips, passive income, financial freedom
-- Is a complete statement — do NOT end with a colon, dash, or ellipsis
-- Keep under 65 characters when possible
-- Use ONE or TWO words in ALL CAPS for emphasis when it feels natural (not every title)
-
-High-performing title patterns (vary these):
-"How Millionaires Use X to Y"
-"Why EVERYTHING Changes After $X"
-"How People Actually Retire Before 40"
-"The REAL Reason X Happens at $Y"
-"What Happens to Your Money When X"
-"How Many Americans Actually Have $X Saved"
-"Why the Wealthy Never X (And What They Do Instead)"
-"X Jaw-Dropping Money Stats Most People Don't Know"
-"Why Most People Are BROKE by 30 (The Math Is Brutal)"
-
-Questions work well too:
-"How Many People ACTUALLY Retire With $1M?"
-"What Happens When You Start Investing at 25 vs 35?"
 {dedup_block}
 Return ONLY the title text, nothing else. No quotes, no explanation."""
 
@@ -138,26 +120,25 @@ Return ONLY the title text, nothing else. No quotes, no explanation."""
 
 
 def generate_script(topic: str, config: Config, client: genai.Client) -> str:
-    """Generate a 3500-4500 word YouTube script using the prompt template."""
+    """Generate a YouTube script using the channel's prompt template."""
     prompt = config.script_generation_prompt.replace("[TOPIC]", topic)
 
-    banned_list = ", ".join(f'"{p}"' for p in config.banned_phrases)
-
-    # Add channel context
+    # Add channel context and word count constraints
     prompt += f"""
 
 Channel context: {config.channel_theme}
 
 CRITICAL RULES:
 - The script must be between {config.script_min_words} and {config.script_max_words} words.
-- ABSOLUTELY FORBIDDEN — do NOT use any of these phrases anywhere in the script: {banned_list}
-  These are prescriptive phrases. This channel is observational and analytical, NOT advisory.
-  Replace any urge to write prescriptive language with third-person observations like:
-    "what tends to happen is…", "the pattern that emerges…", "people in this position often…",
-    "the data suggests…", "institutions typically respond by…"
-- Write the script as a voiceover narration — no stage directions, no [brackets], just the spoken words.
-- Include a subscribe CTA early in the script (within the first 500 words).
-- Close by reinforcing that this information is rarely discussed and why.
+- Write the script as a voiceover narration — no stage directions, no [brackets], just the spoken words."""
+
+    # Add banned phrases if configured
+    if config.banned_phrases:
+        banned_list = ", ".join(f'"{p}"' for p in config.banned_phrases)
+        prompt += f"""
+- ABSOLUTELY FORBIDDEN — do NOT use any of these phrases anywhere in the script: {banned_list}"""
+
+    prompt += """
 
 Write the full script now."""
 
@@ -190,7 +171,15 @@ def generate_description(
     """Generate a YouTube description with SEO keywords and disclaimer."""
     keywords_str = ", ".join(config.required_keywords)
 
-    prompt = f"""Write a YouTube video description for this video:
+    if config.description_generation_prompt:
+        # Use channel-specific description prompt
+        prompt = config.description_generation_prompt
+        prompt = prompt.replace("[TITLE]", title)
+        prompt = prompt.replace("[TOPIC]", topic)
+        prompt = prompt.replace("[DISCLAIMER]", config.disclaimer)
+    else:
+        # Default generic description prompt
+        prompt = f"""Write a YouTube video description for this video:
 
 Title: "{title}"
 Topic: "{topic}"
@@ -228,7 +217,9 @@ def generate_tags(
     """Generate topic-specific YouTube tags for a video."""
     default_tags = ", ".join(config.youtube_tags)
 
-    prompt = f"""You are a YouTube SEO specialist for a finance education channel.
+    prompt = f"""You are a YouTube SEO specialist.
+
+Channel theme: {config.channel_theme}
 
 Video title: "{title}"
 Topic: "{topic}"
@@ -238,13 +229,11 @@ Generate 10-15 YouTube tags that will help this specific video rank in search. I
 - Short keyword phrases (2-4 words each)
 - EVERY tag MUST be 30 characters or fewer — YouTube rejects longer tags
 - Related subtopics and questions viewers might search
-- Do NOT include single generic words like "money" or "finance" — those are already covered
 
 The channel already uses these default tags: {default_tags}
 Do NOT repeat any of those. Only generate NEW tags specific to this video's topic.
 
-Return ONLY a JSON array of tag strings, nothing else. Example:
-["life insurance strategy", "infinite banking explained", "whole life cash value", "rich people insurance"]"""
+Return ONLY a JSON array of tag strings, nothing else."""
 
     response = client.models.generate_content(
         model=config.text_model_name,
@@ -276,6 +265,58 @@ Return ONLY a JSON array of tag strings, nothing else. Example:
         result.append(tag)
         total_len += len(tag) + 1
     return result
+
+
+def extract_stock_footage_queries(
+    script: str,
+    num_clips: int,
+    config: Config,
+    client: genai.Client,
+) -> list[str]:
+    """Split the script into segments and generate Pexels search queries for each."""
+    prompt = f"""You are a visual director for a YouTube video. Given this script, divide it into exactly {num_clips} sequential visual segments and generate a short stock footage search query for each one.
+
+SCRIPT:
+{script}
+
+For each segment, write a 2-5 word search query that would find relevant stock footage on Pexels.com. Think about:
+- What visual scene best represents what's being narrated?
+- Use concrete, searchable terms (e.g., "couple arguing kitchen", "woman texting phone night", "man crying alone")
+- Avoid abstract concepts — search for tangible scenes, actions, and emotions
+- Each query should be visually distinct from the others
+
+Return ONLY a JSON array of exactly {num_clips} search query strings. Example:
+["couple arguing kitchen", "woman texting secretly night", "man discovering phone messages", "divorce papers table"]"""
+
+    response = client.models.generate_content(
+        model=config.text_model_name,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            temperature=0.7,
+            max_output_tokens=4096,
+        ),
+    )
+
+    text = response.text.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1]
+        if text.endswith("```"):
+            text = text[: text.rfind("```")]
+        text = text.strip()
+
+    queries = json.loads(text)
+    if not isinstance(queries, list):
+        raise ValueError(f"Expected JSON array, got: {type(queries)}")
+
+    # Pad or truncate to exact count
+    if len(queries) < num_clips:
+        logger.warning(f"Got {len(queries)} queries, expected {num_clips}. Padding.")
+        while len(queries) < num_clips:
+            queries.append(queries[-1])
+    elif len(queries) > num_clips:
+        queries = queries[:num_clips]
+
+    return queries
 
 
 def extract_image_prompts(

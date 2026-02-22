@@ -13,6 +13,9 @@ class Config:
     topics: list[str]
     video_count: int
 
+    # Video mode: "ken_burns" (cartoon images) or "stock_footage" (Pexels clips + subtitles)
+    video_mode: str
+
     # Channel
     channel_theme: str
     required_keywords: list[str]
@@ -32,13 +35,13 @@ class Config:
     tts_model: str
     tts_voice: str
 
-    # Image generation
+    # Image generation (ken_burns mode)
     image_model: str
-    reference_image_path: Path
     seconds_per_image: int
     image_width: int
     image_height: int
     image_aspect_ratio: str
+    reference_image_path: Path | None
 
     # Thumbnail
     thumbnail_width: int
@@ -47,10 +50,10 @@ class Config:
 
     # Video
     video_fps: int
-    ken_burns_ratio: float
     video_codec: str
     audio_codec: str
     video_bitrate: str
+    ken_burns_ratio: float
 
     # YouTube
     youtube_client_secrets: str
@@ -70,6 +73,9 @@ class Config:
     # Script generation prompt
     script_generation_prompt: str
 
+    # Thumbnail strategist prompt
+    thumbnail_strategist_prompt: str
+
     # Scheduling
     publish_timezone: str
     publish_times: list[list[int]]
@@ -80,6 +86,23 @@ class Config:
 
     # Cleanup
     cleanup_after_upload: bool
+
+    # --- Fields with defaults below ---
+
+    # Title generation prompt (optional — channel-specific title formula)
+    title_generation_prompt: str = ""
+
+    # Description generation prompt (optional — channel-specific description style)
+    description_generation_prompt: str = ""
+
+    # Thumbnail text overlay (if true, overlay text with Pillow instead of AI rendering)
+    thumbnail_text_overlay: bool = False
+    thumbnail_font_path: str = "assets/Anton-Regular.ttf"
+
+    # Stock footage settings (stock_footage mode)
+    seconds_per_clip: int = 10
+    subtitle_font_size: int = 56
+    subtitle_margin_v: int = 40
 
     # Manual titles (one per topic, in order; empty = auto-generate)
     titles: list[str] = None
@@ -102,44 +125,71 @@ def load_config(config_path: str = "config.yaml") -> Config:
     with open(config_file) as f:
         raw = yaml.safe_load(f)
 
-    # Load script generation prompt
-    prompt_path = config_file.parent / "script_generation_prompt.md"
+    config_dir = config_file.parent
+
+    video_mode = raw.get("video_mode", "ken_burns")
+
+    # Load script generation prompt (next to config file)
+    prompt_path = config_dir / "script_generation_prompt.md"
     script_prompt = ""
     if prompt_path.exists():
         script_prompt = prompt_path.read_text(encoding="utf-8").strip()
 
+    # Load thumbnail strategist prompt (next to config file)
+    thumb_prompt_path = config_dir / "thumbnail_prompt.md"
+    thumb_prompt = ""
+    if thumb_prompt_path.exists():
+        thumb_prompt = thumb_prompt_path.read_text(encoding="utf-8").strip()
+
+    # Load title generation prompt (optional, next to config file)
+    title_prompt_path = config_dir / "title_generation_prompt.md"
+    title_prompt = ""
+    if title_prompt_path.exists():
+        title_prompt = title_prompt_path.read_text(encoding="utf-8").strip()
+
+    # Load description generation prompt (optional, next to config file)
+    desc_prompt_path = config_dir / "description_generation_prompt.md"
+    desc_prompt = ""
+    if desc_prompt_path.exists():
+        desc_prompt = desc_prompt_path.read_text(encoding="utf-8").strip()
+
     # Normalize the disclaimer (collapse whitespace from YAML multiline)
     disclaimer = " ".join(raw["channel"]["disclaimer"].split())
 
-    ref_image = Path(raw["image_gen"]["reference_image"])
-    if not ref_image.exists():
-        raise FileNotFoundError(f"Reference image not found: {ref_image}")
+    # Reference image (optional for stock_footage mode)
+    ref_image = None
+    image_gen = raw.get("image_gen", {})
+    if image_gen.get("reference_image"):
+        ref_image = Path(image_gen["reference_image"])
+        if not ref_image.exists():
+            raise FileNotFoundError(f"Reference image not found: {ref_image}")
 
     config = Config(
         topics=raw.get("topics", []),
         video_count=raw.get("video_count", 1),
+        video_mode=video_mode,
         channel_theme=" ".join(raw["channel"]["theme"].split()),
         required_keywords=raw["channel"]["required_keywords"],
         disclaimer=disclaimer,
         script_min_words=raw["script"]["min_words"],
         script_max_words=raw["script"]["max_words"],
-        banned_phrases=raw["script"]["banned_phrases"],
+        banned_phrases=raw["script"].get("banned_phrases", []),
         text_model_name=raw["text_model"]["name"],
         text_model_temperature=raw["text_model"]["temperature"],
         text_model_max_tokens=raw["text_model"]["max_output_tokens"],
         tts_model=raw["tts"]["model"],
         tts_voice=raw["tts"]["voice"],
-        image_model=raw["image_gen"]["model"],
+        image_model=image_gen.get("model", "gemini-2.5-flash-image"),
         reference_image_path=ref_image,
-        seconds_per_image=raw["image_gen"]["seconds_per_image"],
-        image_width=raw["image_gen"]["image_width"],
-        image_height=raw["image_gen"]["image_height"],
-        image_aspect_ratio=raw["image_gen"].get("aspect_ratio", "16:9"),
+        seconds_per_image=image_gen.get("seconds_per_image", 9),
+        image_width=image_gen.get("image_width", 1920),
+        image_height=image_gen.get("image_height", 1080),
+        image_aspect_ratio=image_gen.get("aspect_ratio", "16:9"),
         thumbnail_width=raw["thumbnail"]["width"],
         thumbnail_height=raw["thumbnail"]["height"],
         thumbnail_min_contrast=raw["thumbnail"]["min_contrast_ratio"],
         video_fps=raw["video"]["fps"],
-        ken_burns_ratio=raw["video"]["ken_burns_ratio"],
+        ken_burns_ratio=raw["video"].get("ken_burns_ratio", 0.04),
         video_codec=raw["video"]["codec"],
         audio_codec=raw["video"]["audio_codec"],
         video_bitrate=raw["video"]["bitrate"],
@@ -153,11 +203,19 @@ def load_config(config_path: str = "config.yaml") -> Config:
         retry_max_delay=raw["retry"]["max_delay_seconds"],
         output_base_dir=Path(raw["output"]["base_dir"]),
         script_generation_prompt=script_prompt,
+        thumbnail_strategist_prompt=thumb_prompt,
+        title_generation_prompt=title_prompt,
+        description_generation_prompt=desc_prompt,
         publish_timezone=raw.get("scheduling", {}).get("timezone", "America/New_York"),
         publish_times=raw.get("scheduling", {}).get("publish_times", [[8, 0], [18, 0]]),
         max_parallel_videos=raw.get("max_parallel_videos", 1),
         render_workers=raw.get("render_workers", 4),
         cleanup_after_upload=raw.get("cleanup_after_upload", False),
+        seconds_per_clip=raw.get("stock_footage", {}).get("seconds_per_clip", 10),
+        subtitle_font_size=raw.get("subtitles", {}).get("font_size", 56),
+        subtitle_margin_v=raw.get("subtitles", {}).get("margin_v", 40),
+        thumbnail_text_overlay=raw.get("thumbnail", {}).get("text_overlay", False),
+        thumbnail_font_path=raw.get("thumbnail", {}).get("font_path", "assets/Anton-Regular.ttf"),
     )
 
     return config

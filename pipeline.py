@@ -22,9 +22,9 @@ from pathlib import Path
 
 from google import genai
 
-from assembly import video
+from assembly import stock_video, video
 from config_loader import Config
-from generators import images, speech, text, thumbnail
+from generators import images, speech, stock_footage, subtitles, text, thumbnail
 from quality import checks
 from scheduling import compute_publish_schedule
 from upload import youtube
@@ -360,100 +360,17 @@ def _process_single_video(
         ckpt.mark_done("voiceover", audio_duration=audio_duration)
         logger.info(f"Voiceover: {audio_duration:.1f}s")
 
-    # --- Stage 5: Image prompts ---
-    prompts_path = output_dir / "image_prompts.json"
-    num_images = math.ceil(audio_duration / config.seconds_per_image)
-    if ckpt.is_done("image_prompts") and prompts_path.exists():
-        image_prompts = json.loads(prompts_path.read_text(encoding="utf-8"))
-        logger.info(
-            f"Stage 5: Loaded {len(image_prompts)} cached image prompts"
+    # --- Stages 5-8 branch by video_mode ---
+    if config.video_mode == "stock_footage":
+        image_paths, num_visuals, video_path, thumb_path = _stages_5_to_8_stock_footage(
+            script_text, audio_duration, audio_path, title, topic,
+            output_dir, config, client, ckpt, quality_results,
         )
     else:
-        logger.info("Stage 5: Extracting image prompts...")
-        image_prompts = _retry_on_error(
-            fn=lambda: text.extract_image_prompts(
-                script_text, num_images, config, client
-            ),
-            stage_name="image_prompts",
-            config=config,
+        image_paths, num_visuals, video_path, thumb_path = _stages_5_to_8_ken_burns(
+            script_text, audio_duration, audio_path, title, topic,
+            output_dir, config, client, ckpt, quality_results,
         )
-        _save_artifact(
-            output_dir / "image_prompts.json",
-            json.dumps(image_prompts, indent=2),
-        )
-        ckpt.mark_done("image_prompts")
-        logger.info(f"Image prompts: {len(image_prompts)}")
-
-    # --- Stage 6: Images ---
-    if ckpt.is_done("images"):
-        image_paths = _load_image_paths(output_dir, len(image_prompts))
-        logger.info(f"Stage 6: Loaded {len(image_paths)} cached images")
-    else:
-        logger.info("Stage 6: Generating images...")
-        image_paths = _retry_on_error(
-            fn=lambda: images.generate_images(
-                image_prompts, output_dir, config, client
-            ),
-            stage_name="image_generation",
-            config=config,
-        )
-        for img_path in image_paths:
-            img_check = checks.check_image_exists_and_dimensions(
-                img_path, config.image_width, config.image_height
-            )
-            quality_results[f"image_{img_path.name}"] = img_check
-            if not img_check.passed:
-                raise PipelineError(f"Image check failed: {img_check.message}")
-        ckpt.mark_done("images")
-        logger.info(f"Generated {len(image_paths)} images")
-
-    # --- Stage 7: Thumbnail ---
-    thumb_path = output_dir / "thumbnail.png"
-    if ckpt.is_done("thumbnail") and thumb_path.exists():
-        logger.info("Stage 7: Loaded cached thumbnail")
-    else:
-        logger.info("Stage 7: Generating thumbnail...")
-        thumb_path = _retry_on_error(
-            fn=lambda: thumbnail.generate_thumbnail(
-                title, topic, output_dir, config, client
-            ),
-            stage_name="thumbnail",
-            config=config,
-        )
-        contrast_check = checks.check_contrast_ratio(
-            thumb_path, config.thumbnail_min_contrast
-        )
-        quality_results["thumbnail_contrast"] = contrast_check
-        if not contrast_check.passed:
-            logger.warning(
-                f"Thumbnail contrast warning: {contrast_check.message}"
-            )
-            logger.info("Regenerating thumbnail for better contrast...")
-            thumb_path = _retry_on_error(
-                fn=lambda: thumbnail.generate_thumbnail(
-                    title, topic, output_dir, config, client
-                ),
-                stage_name="thumbnail_retry",
-                config=config,
-            )
-            contrast_check = checks.check_contrast_ratio(
-                thumb_path, config.thumbnail_min_contrast
-            )
-            quality_results["thumbnail_contrast_retry"] = contrast_check
-        logger.info(f"Thumbnail: contrast ratio {contrast_check.message}")
-        ckpt.mark_done("thumbnail")
-
-    # --- Stage 8: Video assembly ---
-    video_path = output_dir / "video.mp4"
-    if ckpt.is_done("video") and video_path.exists():
-        logger.info("Stage 8: Loaded cached video")
-    else:
-        logger.info("Stage 8: Assembling video...")
-        video_path = video.assemble_video(
-            image_paths, audio_path, output_dir, config
-        )
-        ckpt.mark_done("video")
-        logger.info("Video assembled successfully")
 
     # --- Stage 9: Upload ---
     video_id = None
@@ -500,7 +417,7 @@ def _process_single_video(
         "video_id": video_id,
         "video_url": video_url,
         "audio_duration_seconds": audio_duration,
-        "num_images": len(image_paths),
+        "num_visuals": num_visuals,
         "word_count": word_count,
         "quality_checks": {
             k: {"passed": v.passed, "message": v.message}
@@ -517,6 +434,209 @@ def _process_single_video(
         success=True,
         quality_results={k: v.passed for k, v in quality_results.items()},
     )
+
+
+# ---------------------------------------------------------------------------
+# Video-mode stage helpers
+# ---------------------------------------------------------------------------
+
+
+def _stages_5_to_8_ken_burns(
+    script_text, audio_duration, audio_path, title, topic,
+    output_dir, config, client, ckpt, quality_results,
+) -> tuple[list[Path], int]:
+    """Stages 5-8 for ken_burns mode: image prompts → images → thumbnail → video."""
+    # Stage 5: Image prompts
+    prompts_path = output_dir / "image_prompts.json"
+    num_images = math.ceil(audio_duration / config.seconds_per_image)
+    if ckpt.is_done("image_prompts") and prompts_path.exists():
+        image_prompts = json.loads(prompts_path.read_text(encoding="utf-8"))
+        logger.info(f"Stage 5: Loaded {len(image_prompts)} cached image prompts")
+    else:
+        logger.info("Stage 5: Extracting image prompts...")
+        image_prompts = _retry_on_error(
+            fn=lambda: text.extract_image_prompts(
+                script_text, num_images, config, client
+            ),
+            stage_name="image_prompts",
+            config=config,
+        )
+        _save_artifact(
+            output_dir / "image_prompts.json",
+            json.dumps(image_prompts, indent=2),
+        )
+        ckpt.mark_done("image_prompts")
+        logger.info(f"Image prompts: {len(image_prompts)}")
+
+    # Stage 6: Images
+    if ckpt.is_done("images"):
+        image_paths = _load_image_paths(output_dir, len(image_prompts))
+        logger.info(f"Stage 6: Loaded {len(image_paths)} cached images")
+    else:
+        logger.info("Stage 6: Generating images...")
+        image_paths = _retry_on_error(
+            fn=lambda: images.generate_images(
+                image_prompts, output_dir, config, client
+            ),
+            stage_name="image_generation",
+            config=config,
+        )
+        for img_path in image_paths:
+            img_check = checks.check_image_exists_and_dimensions(
+                img_path, config.image_width, config.image_height
+            )
+            quality_results[f"image_{img_path.name}"] = img_check
+            if not img_check.passed:
+                raise PipelineError(f"Image check failed: {img_check.message}")
+        ckpt.mark_done("images")
+        logger.info(f"Generated {len(image_paths)} images")
+
+    # Stage 7: Thumbnail
+    thumb_path = output_dir / "thumbnail.png"
+    if ckpt.is_done("thumbnail") and thumb_path.exists():
+        logger.info("Stage 7: Loaded cached thumbnail")
+    else:
+        logger.info("Stage 7: Generating thumbnail...")
+        thumb_path = _retry_on_error(
+            fn=lambda: thumbnail.generate_thumbnail(
+                title, topic, output_dir, config, client
+            ),
+            stage_name="thumbnail",
+            config=config,
+        )
+        contrast_check = checks.check_contrast_ratio(
+            thumb_path, config.thumbnail_min_contrast
+        )
+        quality_results["thumbnail_contrast"] = contrast_check
+        if not contrast_check.passed:
+            logger.warning(f"Thumbnail contrast warning: {contrast_check.message}")
+            logger.info("Regenerating thumbnail for better contrast...")
+            thumb_path = _retry_on_error(
+                fn=lambda: thumbnail.generate_thumbnail(
+                    title, topic, output_dir, config, client
+                ),
+                stage_name="thumbnail_retry",
+                config=config,
+            )
+            contrast_check = checks.check_contrast_ratio(
+                thumb_path, config.thumbnail_min_contrast
+            )
+            quality_results["thumbnail_contrast_retry"] = contrast_check
+        logger.info(f"Thumbnail: contrast ratio {contrast_check.message}")
+        ckpt.mark_done("thumbnail")
+
+    # Stage 8: Video assembly (Ken Burns)
+    video_path = output_dir / "video.mp4"
+    if ckpt.is_done("video") and video_path.exists():
+        logger.info("Stage 8: Loaded cached video")
+    else:
+        logger.info("Stage 8: Assembling video (Ken Burns)...")
+        video_path = video.assemble_video(
+            image_paths, audio_path, output_dir, config
+        )
+        ckpt.mark_done("video")
+        logger.info("Video assembled successfully")
+
+    return image_paths, len(image_paths), video_path, thumb_path
+
+
+def _stages_5_to_8_stock_footage(
+    script_text, audio_duration, audio_path, title, topic,
+    output_dir, config, client, ckpt, quality_results,
+) -> tuple[list[Path], int]:
+    """Stages 5-8 for stock_footage mode: search queries → clips → subtitles → video."""
+    # Stage 5: Stock footage search queries
+    queries_path = output_dir / "stock_queries.json"
+    num_clips = math.ceil(audio_duration / config.seconds_per_clip)
+    if ckpt.is_done("stock_queries") and queries_path.exists():
+        search_queries = json.loads(queries_path.read_text(encoding="utf-8"))
+        logger.info(f"Stage 5: Loaded {len(search_queries)} cached search queries")
+    else:
+        logger.info("Stage 5: Generating stock footage search queries...")
+        search_queries = _retry_on_error(
+            fn=lambda: text.extract_stock_footage_queries(
+                script_text, num_clips, config, client
+            ),
+            stage_name="stock_queries",
+            config=config,
+        )
+        _save_artifact(queries_path, json.dumps(search_queries, indent=2))
+        ckpt.mark_done("stock_queries")
+        logger.info(f"Search queries: {len(search_queries)}")
+
+    # Stage 6: Download stock footage clips
+    if ckpt.is_done("stock_clips"):
+        clip_paths = _load_clip_paths(output_dir, len(search_queries))
+        logger.info(f"Stage 6: Loaded {len(clip_paths)} cached stock clips")
+    else:
+        logger.info("Stage 6: Downloading stock footage clips...")
+        clip_paths = _retry_on_error(
+            fn=lambda: stock_footage.fetch_stock_clips(
+                search_queries, output_dir, config
+            ),
+            stage_name="stock_clips",
+            config=config,
+        )
+        ckpt.mark_done("stock_clips")
+        logger.info(f"Downloaded {len(clip_paths)} stock clips")
+
+    # Stage 6b: Generate subtitles
+    srt_path = output_dir / "subtitles.srt"
+    if ckpt.is_done("subtitles") and srt_path.exists():
+        logger.info("Stage 6b: Loaded cached subtitles")
+    else:
+        logger.info("Stage 6b: Generating subtitles...")
+        srt_path = subtitles.generate_srt(script_text, audio_duration, srt_path)
+        ckpt.mark_done("subtitles")
+        logger.info("Subtitles generated")
+
+    # Stage 7: Thumbnail
+    thumb_path = output_dir / "thumbnail.png"
+    if ckpt.is_done("thumbnail") and thumb_path.exists():
+        logger.info("Stage 7: Loaded cached thumbnail")
+    else:
+        logger.info("Stage 7: Generating thumbnail...")
+        thumb_path = _retry_on_error(
+            fn=lambda: thumbnail.generate_thumbnail(
+                title, topic, output_dir, config, client
+            ),
+            stage_name="thumbnail",
+            config=config,
+        )
+        contrast_check = checks.check_contrast_ratio(
+            thumb_path, config.thumbnail_min_contrast
+        )
+        quality_results["thumbnail_contrast"] = contrast_check
+        if not contrast_check.passed:
+            logger.warning(f"Thumbnail contrast warning: {contrast_check.message}")
+            logger.info("Regenerating thumbnail for better contrast...")
+            thumb_path = _retry_on_error(
+                fn=lambda: thumbnail.generate_thumbnail(
+                    title, topic, output_dir, config, client
+                ),
+                stage_name="thumbnail_retry",
+                config=config,
+            )
+            contrast_check = checks.check_contrast_ratio(
+                thumb_path, config.thumbnail_min_contrast
+            )
+            quality_results["thumbnail_contrast_retry"] = contrast_check
+        logger.info(f"Thumbnail: contrast ratio {contrast_check.message}")
+        ckpt.mark_done("thumbnail")
+
+    # Stage 8: Stock footage video assembly
+    video_path = output_dir / "video.mp4"
+    if ckpt.is_done("video") and video_path.exists():
+        logger.info("Stage 8: Loaded cached video")
+    else:
+        logger.info("Stage 8: Assembling stock footage video...")
+        video_path = stock_video.assemble_stock_video(
+            clip_paths, audio_path, srt_path, output_dir, config
+        )
+        ckpt.mark_done("video")
+        logger.info("Stock footage video assembled successfully")
+
+    return clip_paths, len(clip_paths), video_path, thumb_path
 
 
 # ---------------------------------------------------------------------------
@@ -537,6 +657,17 @@ def _load_image_paths(output_dir: Path, expected_count: int) -> list[Path]:
     if len(paths) < expected_count:
         raise PipelineError(
             f"Expected {expected_count} images in {images_dir}, found {len(paths)}"
+        )
+    return paths[:expected_count]
+
+
+def _load_clip_paths(output_dir: Path, expected_count: int) -> list[Path]:
+    """Load previously downloaded clip paths from the clips/ subdirectory."""
+    clips_dir = output_dir / "clips"
+    paths = sorted(clips_dir.glob("*.mp4"))
+    if len(paths) < expected_count:
+        raise PipelineError(
+            f"Expected {expected_count} clips in {clips_dir}, found {len(paths)}"
         )
     return paths[:expected_count]
 

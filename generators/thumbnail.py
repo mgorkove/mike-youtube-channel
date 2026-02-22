@@ -1,91 +1,165 @@
 """Thumbnail generation via Gemini.
 
-Uses a two-step process:
-1. Gemini text model generates an optimized image prompt based on the
-   title/topic using a thumbnail strategist system prompt.
-2. Gemini image model generates the final thumbnail with text baked in.
+Two modes controlled by config.thumbnail_text_overlay:
 
-Style: Bold adult animated cartoon, thick outlines, bold typography,
-high contrast, mobile-optimized, 1280x720.
+**text_overlay=False** (default, e.g. Mike Explains Money):
+  AI generates the full thumbnail (image + text baked in).
+
+**text_overlay=True** (e.g. Heartbreak Chronicles):
+  1. Gemini text model → overlay text + narrow portrait prompt
+  2. Gemini image model → narrow portrait of the woman (~512×720)
+  3. Pillow composites: dark bokeh background + woman on right + text on left
 """
 
 import io
 import logging
+import random
 from pathlib import Path
 
 from google import genai
 from google.genai import types
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from config_loader import Config
 
 logger = logging.getLogger(__name__)
 
-THUMBNAIL_STRATEGIST_PROMPT = """You are an elite YouTube thumbnail strategist. Your job: create the most clickable finance thumbnail possible.
+# Colors for text overlay
+COLOR_ORANGE = (255, 165, 0)
+COLOR_WHITE = (255, 255, 255)
+COLOR_BLACK = (0, 0, 0)
 
-Generate ONE image-generation prompt for a YouTube thumbnail based on the video title/topic.
+# Portrait dimensions for the woman (narrow, will be pasted onto right side)
+PORTRAIT_WIDTH = 512
+PORTRAIT_HEIGHT = 720
 
-LAYOUT — The thumbnail should look like a popular YouTube finance channel thumbnail:
-1. The cartoon man from the reference image — head and upper body, LARGE, filling the left 35-40% of the frame. His face must be big enough to read his expression at phone size.
-2. Bold ALL-CAPS text overlay — 2-4 words, HUGE, filling most of the right side of the frame
-3. 2-3 small illustrative icons or props that support the topic (e.g., dollar signs, chart arrows, bank buildings, locks, warning signs). These are secondary to the face and text.
-4. A WHITE or very light background (this is the default). Only use dark backgrounds for especially dark/urgent topics.
 
-CRITICAL: Every thumbnail on this channel must look DIFFERENT. Vary the layout, icons, and color accents each time.
+def _create_bokeh_background(width: int, height: int) -> Image.Image:
+    """Create a dark warm-toned background with soft bokeh lights."""
+    # Dark warm base gradient
+    img = Image.new("RGB", (width, height))
+    draw = ImageDraw.Draw(img)
 
-TEXT — Must be bold and prominent:
-- Choose 2-4 words extracted or paraphrased from the video title
-- ALWAYS include a specific number or dollar amount when the title mentions one — numbers are the #1 driver of clicks on finance thumbnails
-- If the title doesn't have a number, extract the most curiosity-inducing 2-4 word phrase
-- Thick, heavy, blocky Impact-style font with strong black outline/stroke
-- Text appears ONCE only
-- Use bold colors: green for money/positive, red for urgency/danger, on the white background
-- The text should be HUGE and immediately readable even at phone size
+    # Vertical gradient: dark brown-black at top to slightly warmer at bottom
+    for y in range(height):
+        r = int(15 + 10 * (y / height))
+        g = int(8 + 5 * (y / height))
+        b = int(5 + 3 * (y / height))
+        draw.line([(0, y), (width, y)], fill=(r, g, b))
 
-Good text examples:
-- "What Changes When You Cross the $250K Threshold" → "$250K CHANGES"
-- "The EXACT Net Worth Where You Can Stop..." → "$300K RULE"
-- "Why the Path to $1M is DECIDED Before..." → "$1M PATH"
-- "How the Banking System Assigns Internal Risk Scores" → "YOUR RISK SCORE"
-- "The Invisible Tax Cliff..." → "TAX CLIFF"
-- "Lombard Loans: How the Wealthy..." → "NEVER SELL"
+    # Add bokeh dots (soft warm circles)
+    bokeh_layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    bokeh_draw = ImageDraw.Draw(bokeh_layer)
 
-BANNED text: "EPIC FAIL", "GONE WRONG", "YOU WON'T BELIEVE", "SHOCKING", "OMG", "MIND BLOWN", "EXPOSED", "NOT CLICKBAIT", "SECRET", "WHAT HAPPENED"
+    rng = random.Random(42)  # deterministic seed for consistency
+    for _ in range(35):
+        x = rng.randint(-50, width + 50)
+        y = rng.randint(-50, height + 50)
+        radius = rng.randint(15, 80)
+        # Warm amber/orange tones with low opacity
+        r = rng.randint(180, 255)
+        g = rng.randint(100, 180)
+        b = rng.randint(20, 60)
+        alpha = rng.randint(15, 50)
+        bokeh_draw.ellipse(
+            [x - radius, y - radius, x + radius, y + radius],
+            fill=(r, g, b, alpha),
+        )
 
-ILLUSTRATIVE ELEMENTS — Keep it simple, 2-3 small supporting icons MAX:
-- Add 2-3 small icons or props that visually support the video topic
-- Examples: a dollar sign, a bank building, an arrow, a chart, a lock, a document
-- Place them neatly — NOT scattered everywhere. They should complement the composition, not overwhelm it.
-- Use green for positive/money elements, red for negative/danger elements
-- The character and text should remain the clear focal points — icons are secondary
+    # Blur the bokeh for soft glow
+    bokeh_layer = bokeh_layer.filter(ImageFilter.GaussianBlur(radius=25))
 
-CHARACTER — The man from the reference image:
-- Cartoon version of the reference image with thick black outlines and smooth cel shading
-- EXAGGERATED facial expression matching the topic's emotion:
-  * Shock/fear: mouth WIDE open, eyes bulging, eyebrows raised, sweat drops
-  * Anger/frustration: teeth clenched, brow furrowed, eyes narrowed
-  * Confidence/empowerment: smug smirk, one eyebrow raised, pointing at viewer
-- Same hair color/style and teal/sage green crewneck sweater as reference
-- He can point at things, gesture, hold his head, cross arms, or interact with the icons
+    # Composite bokeh onto base
+    img = img.convert("RGBA")
+    img = Image.alpha_composite(img, bokeh_layer)
+    return img.convert("RGB")
 
-STYLE:
-- Bold cartoon — thick black outlines, smooth cel shading
-- WHITE or light background as the default
-- Colorful illustrative icons and elements scattered around
-- Bold, saturated accent colors (green, red, gold) against the white background
-- NOT realistic, NOT 3D
-- High contrast, eye-catching at phone-screen size
-- 16:9 aspect ratio, 1280x720
 
-STRICT BANS:
-- Euro signs (€) — only dollar signs ($)
-- Placeholder names like "John Smith"
-- Black bars or letterboxing
+def _overlay_text(
+    img: Image.Image,
+    overlay_text: str,
+    font_path: str,
+) -> Image.Image:
+    """Render multi-line overlay text onto the left side of a thumbnail.
 
-Output format (strictly follow this):
-- First line: EXACT_TEXT: followed by the 2-4 word ALL-CAPS overlay text
-- Second line: the full image generation prompt as a single paragraph
-- Nothing else"""
+    Text lines are separated by " / " in the overlay_text string.
+    First 2 lines and last 1-2 lines are orange; middle lines are white.
+    """
+    lines = [line.strip() for line in overlay_text.split("/")]
+    if not lines:
+        return img
+
+    img = img.copy()
+    draw = ImageDraw.Draw(img)
+    width, height = img.size
+
+    # Target: text occupies the left ~55% of the frame
+    text_area_width = int(width * 0.55)
+    margin_left = int(width * 0.03)
+    margin_top = int(height * 0.08)
+    margin_bottom = int(height * 0.08)
+    available_height = height - margin_top - margin_bottom
+
+    # Find the largest font size that fits all lines in the available area
+    font_size = 72
+    min_font_size = 24
+    line_spacing_ratio = 1.15
+
+    font = None
+    while font_size >= min_font_size:
+        try:
+            font = ImageFont.truetype(font_path, font_size)
+        except (OSError, IOError):
+            logger.warning(f"Could not load font {font_path}, using default")
+            font = ImageFont.load_default()
+            break
+
+        total_height = 0
+        fits = True
+        for line in lines:
+            bbox = draw.textbbox((0, 0), line, font=font)
+            line_w = bbox[2] - bbox[0]
+            line_h = bbox[3] - bbox[1]
+            total_height += int(line_h * line_spacing_ratio)
+            if line_w > text_area_width:
+                fits = False
+                break
+
+        if fits and total_height <= available_height:
+            break
+        font_size -= 2
+
+    if font is None:
+        font = ImageFont.load_default()
+
+    # Calculate total text block height for vertical centering
+    line_heights = []
+    for line in lines:
+        bbox = draw.textbbox((0, 0), line, font=font)
+        line_heights.append(bbox[3] - bbox[1])
+    total_text_height = sum(int(h * line_spacing_ratio) for h in line_heights)
+    y_start = margin_top + (available_height - total_text_height) // 2
+
+    # Color assignment: first 2 = orange, last 2 = orange, rest = white
+    num_lines = len(lines)
+    line_colors = []
+    for i in range(num_lines):
+        if i < 2 or i >= num_lines - 2:
+            line_colors.append(COLOR_ORANGE)
+        else:
+            line_colors.append(COLOR_WHITE)
+
+    # Draw each line with black outline
+    outline_width = max(3, font_size // 15)
+    y = y_start
+    for line, color, lh in zip(lines, line_colors, line_heights):
+        draw.text(
+            (margin_left, y), line, font=font, fill=color,
+            stroke_width=outline_width, stroke_fill=COLOR_BLACK,
+        )
+        y += int(lh * line_spacing_ratio)
+
+    return img
 
 
 def generate_thumbnail(
@@ -95,17 +169,28 @@ def generate_thumbnail(
     config: Config,
     client: genai.Client,
 ) -> Path:
-    """Generate a YouTube thumbnail using a two-step AI process.
+    """Generate a YouTube thumbnail.
 
-    Step 1: Gemini text model creates an optimized image generation prompt.
-    Step 2: Gemini image model generates the thumbnail with text baked in.
+    text_overlay=False: AI generates the full thumbnail (legacy mode).
+    text_overlay=True:  AI generates a narrow portrait → Pillow composites
+                        dark background + woman + text overlay.
     """
-    reference_img = Image.open(config.reference_image_path)
+    strategist_prompt = config.thumbnail_strategist_prompt
+    if not strategist_prompt:
+        raise RuntimeError(
+            "No thumbnail strategist prompt configured. "
+            "Ensure thumbnail_prompt.md exists next to the config file."
+        )
 
-    # Step 1: Generate the image prompt via text model
+    # Load reference image if available
+    reference_img = None
+    if config.reference_image_path:
+        reference_img = Image.open(config.reference_image_path)
+
+    # --- Step 1: Text model → overlay text + image prompt ---
     logger.info("Generating thumbnail prompt...")
     strategist_input = (
-        f"{THUMBNAIL_STRATEGIST_PROMPT}\n\n"
+        f"{strategist_prompt}\n\n"
         f"Video Title: {title}\n"
         f"Video Topic: {topic}"
     )
@@ -120,57 +205,123 @@ def generate_thumbnail(
     )
     raw_output = prompt_response.text.strip()
 
-    # Parse the exact text and image prompt from strategist output
+    # Parse EXACT_TEXT and image prompt
     overlay_text = ""
     image_prompt = raw_output
     if raw_output.startswith("EXACT_TEXT:"):
-        lines = raw_output.split("\n", 1)
-        overlay_text = lines[0].replace("EXACT_TEXT:", "").strip()
-        image_prompt = lines[1].strip() if len(lines) > 1 else raw_output
+        parts = raw_output.split("\n", 1)
+        overlay_text = parts[0].replace("EXACT_TEXT:", "").strip()
+        image_prompt = parts[1].strip() if len(parts) > 1 else raw_output
     logger.info(f"Overlay text: {overlay_text}")
     logger.info(f"Thumbnail prompt: {image_prompt[:120]}...")
 
-    # Reinforce style and exact text
-    reinforcement = (
-        'CRITICAL RULES — READ BEFORE GENERATING:\n'
-        '- WHITE or light background (default)\n'
-        '- Only 2-3 small supporting icons/props — do NOT clutter the image\n'
-        '- NO euro signs (€) — only dollar signs ($)\n'
-        '- NO black bars or letterboxing\n'
-    )
+    if config.thumbnail_text_overlay:
+        # --- Composite mode: portrait + background + text ---
+        return _generate_composite_thumbnail(
+            image_prompt, overlay_text, output_dir, config, client, reference_img,
+        )
+    else:
+        # --- Legacy mode: AI renders full thumbnail ---
+        return _generate_full_thumbnail(
+            image_prompt, overlay_text, output_dir, config, client, reference_img,
+        )
+
+
+def _generate_full_thumbnail(
+    image_prompt: str,
+    overlay_text: str,
+    output_dir: Path,
+    config: Config,
+    client: genai.Client,
+    reference_img: Image.Image | None,
+) -> Path:
+    """Legacy mode: AI generates the entire thumbnail with text baked in."""
     if overlay_text:
-        reinforcement += (
-            f'- The main overlay text is "{overlay_text}" in bold ALL-CAPS '
+        reinforcement = (
+            f'CRITICAL: The main overlay text is "{overlay_text}" in bold ALL-CAPS '
             f'with thick black outline.\n'
         )
-    image_prompt = f'{reinforcement}\n{image_prompt}'
+        image_prompt = f'{reinforcement}\n{image_prompt}'
 
-    # Step 2: Generate the thumbnail image
-    logger.info("Generating thumbnail image...")
+    contents = [image_prompt]
+    if reference_img:
+        contents.append(reference_img)
+
     response = client.models.generate_content(
         model=config.image_model,
-        contents=[image_prompt, reference_img],
+        contents=contents,
         config=types.GenerateContentConfig(
             response_modalities=["TEXT", "IMAGE"],
         ),
     )
 
-    base_img = None
-    for part in response.candidates[0].content.parts:
-        if part.inline_data and part.inline_data.mime_type and \
-           part.inline_data.mime_type.startswith("image/"):
-            img_data = part.inline_data.data
-            base_img = Image.open(io.BytesIO(img_data))
-            base_img = base_img.resize(
-                (config.thumbnail_width, config.thumbnail_height),
-                Image.LANCZOS,
-            )
-            break
-
-    if base_img is None:
-        raise RuntimeError("No image data in thumbnail generation response")
+    base_img = _extract_image(response)
+    base_img = base_img.resize(
+        (config.thumbnail_width, config.thumbnail_height), Image.LANCZOS,
+    )
 
     thumb_path = output_dir / "thumbnail.png"
     base_img.save(thumb_path, "PNG")
     logger.info(f"Thumbnail saved: {thumb_path}")
     return thumb_path
+
+
+def _generate_composite_thumbnail(
+    image_prompt: str,
+    overlay_text: str,
+    output_dir: Path,
+    config: Config,
+    client: genai.Client,
+    reference_img: Image.Image | None,
+) -> Path:
+    """Composite mode: narrow portrait + dark bokeh background + text overlay."""
+    thumb_w = config.thumbnail_width
+    thumb_h = config.thumbnail_height
+
+    # --- Generate narrow portrait of the woman ---
+    logger.info(f"Generating portrait ({PORTRAIT_WIDTH}x{PORTRAIT_HEIGHT})...")
+    contents = [image_prompt]
+    if reference_img:
+        contents.append(reference_img)
+
+    response = client.models.generate_content(
+        model=config.image_model,
+        contents=contents,
+        config=types.GenerateContentConfig(
+            response_modalities=["TEXT", "IMAGE"],
+        ),
+    )
+
+    portrait = _extract_image(response)
+    # Resize to fill the right portion of the thumbnail
+    portrait = portrait.resize((PORTRAIT_WIDTH, PORTRAIT_HEIGHT), Image.LANCZOS)
+
+    # --- Create dark bokeh background ---
+    logger.info("Creating background...")
+    background = _create_bokeh_background(thumb_w, thumb_h)
+
+    # --- Composite: paste portrait on the right ---
+    paste_x = thumb_w - PORTRAIT_WIDTH
+    paste_y = 0
+    background.paste(portrait, (paste_x, paste_y))
+
+    # --- Overlay text on the left ---
+    if overlay_text:
+        logger.info("Overlaying text...")
+        background = _overlay_text(
+            background, overlay_text, config.thumbnail_font_path,
+        )
+
+    thumb_path = output_dir / "thumbnail.png"
+    background.save(thumb_path, "PNG")
+    logger.info(f"Thumbnail saved: {thumb_path}")
+    return thumb_path
+
+
+def _extract_image(response) -> Image.Image:
+    """Extract the first image from a Gemini response."""
+    for part in response.candidates[0].content.parts:
+        if part.inline_data and part.inline_data.mime_type and \
+           part.inline_data.mime_type.startswith("image/"):
+            return Image.open(io.BytesIO(part.inline_data.data))
+    raise RuntimeError("No image data in thumbnail generation response")

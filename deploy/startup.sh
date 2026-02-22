@@ -2,6 +2,10 @@
 # VM startup script — runs automatically when the GCE instance starts.
 # Pulls latest code, loads secrets, runs the pipeline, sends notification,
 # then shuts down the VM.
+#
+# The CHANNEL to run is read from instance metadata (key: "channel").
+# Defaults to "mike_explains_money" if not set.
+# Each channel can have its own YouTube credentials stored as separate secrets.
 set -euo pipefail
 
 LOG_FILE="/var/log/video-pipeline.log"
@@ -15,6 +19,13 @@ ZONE=$(curl -s -H "Metadata-Flavor: Google" \
     http://metadata.google.internal/computeMetadata/v1/instance/zone | awk -F/ '{print $NF}')
 INSTANCE_NAME=$(curl -s -H "Metadata-Flavor: Google" \
     http://metadata.google.internal/computeMetadata/v1/instance/name)
+
+# Read channel from instance metadata (set via Cloud Scheduler or manually)
+CHANNEL=$(curl -s -H "Metadata-Flavor: Google" \
+    http://metadata.google.internal/computeMetadata/v1/instance/attributes/channel 2>/dev/null \
+    || echo "mike_explains_money")
+
+echo "Channel: $CHANNEL"
 
 APP_DIR="/app"
 
@@ -42,15 +53,31 @@ fetch_secret() {
     gcloud secrets versions access latest --secret="$1" --project="$PROJECT_ID" 2>/dev/null
 }
 
+# Base secrets (shared across channels)
 cat > "$APP_DIR/.env" <<EOF
 GEMINI_API_KEY=$(fetch_secret "GEMINI_API_KEY")
-YOUTUBE_CLIENT_ID=$(fetch_secret "YOUTUBE_CLIENT_ID")
-YOUTUBE_CLIENT_SECRET=$(fetch_secret "YOUTUBE_CLIENT_SECRET")
-YOUTUBE_REFRESH_TOKEN=$(fetch_secret "YOUTUBE_REFRESH_TOKEN")
 NOTIFY_EMAIL_FROM=$(fetch_secret "NOTIFY_EMAIL_FROM")
 NOTIFY_EMAIL_TO=$(fetch_secret "NOTIFY_EMAIL_TO")
 NOTIFY_EMAIL_APP_PASSWORD=$(fetch_secret "NOTIFY_EMAIL_APP_PASSWORD")
 EOF
+
+# Per-channel YouTube credentials
+# Convention: YOUTUBE_CLIENT_ID for default, YOUTUBE_CLIENT_ID_HEARTBREAK for heartbreak_chronicles, etc.
+if [ "$CHANNEL" = "mike_explains_money" ]; then
+    cat >> "$APP_DIR/.env" <<EOF
+YOUTUBE_CLIENT_ID=$(fetch_secret "YOUTUBE_CLIENT_ID")
+YOUTUBE_CLIENT_SECRET=$(fetch_secret "YOUTUBE_CLIENT_SECRET")
+YOUTUBE_REFRESH_TOKEN=$(fetch_secret "YOUTUBE_REFRESH_TOKEN")
+EOF
+elif [ "$CHANNEL" = "heartbreak_chronicles" ]; then
+    cat >> "$APP_DIR/.env" <<EOF
+YOUTUBE_CLIENT_ID=$(fetch_secret "YOUTUBE_CLIENT_ID_HEARTBREAK")
+YOUTUBE_CLIENT_SECRET=$(fetch_secret "YOUTUBE_CLIENT_SECRET_HEARTBREAK")
+YOUTUBE_REFRESH_TOKEN=$(fetch_secret "YOUTUBE_REFRESH_TOKEN_HEARTBREAK")
+PEXELS_API_KEY=$(fetch_secret "PEXELS_API_KEY")
+EOF
+fi
+
 chmod 600 "$APP_DIR/.env"
 
 # ---------- Build Docker image ----------
@@ -58,13 +85,14 @@ echo "Building Docker image..."
 docker build -t video-pipeline "$APP_DIR"
 
 # ---------- Run pipeline ----------
-echo "Starting pipeline..."
+echo "Starting pipeline for channel: $CHANNEL..."
 PIPELINE_EXIT=0
 docker run --rm \
     --env-file "$APP_DIR/.env" \
     -v "$APP_DIR/output:/app/output" \
     video-pipeline \
-    --config deploy/config.cloud.yaml || PIPELINE_EXIT=$?
+    --channel "$CHANNEL" \
+    --config "channels/${CHANNEL}/config.cloud.yaml" || PIPELINE_EXIT=$?
 
 echo "Pipeline exited with code: $PIPELINE_EXIT"
 

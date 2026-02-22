@@ -2,11 +2,14 @@
 """YouTube video generation pipeline — CLI entry point.
 
 Usage:
-    # Generate 3 videos with auto-generated topics (dry run, no upload):
+    # Generate 3 videos for the default channel (dry run, no upload):
     python main.py --count 3 --dry-run
 
+    # Generate videos for a specific channel:
+    python main.py --channel heartbreak_chronicles --count 5
+
     # Generate 1 video with a specific topic:
-    python main.py --count 1 --topics "Why Banks Treat You Differently After \$100K"
+    python main.py --count 1 --topics "Why Banks Treat You Differently After $100K"
 
     # Specify manual titles (matched 1:1 with topics):
     python main.py --count 2 \\
@@ -19,7 +22,7 @@ Usage:
     # Full run with upload:
     python main.py --count 5
 
-    # Use a custom config file:
+    # Use a custom config file (bypasses --channel):
     python main.py --config my_config.yaml --count 2
 
     # Resume a failed run from its output directory:
@@ -33,6 +36,7 @@ import argparse
 import dataclasses
 import logging
 import sys
+from pathlib import Path
 
 from config_loader import load_config
 from pipeline import resume, run
@@ -40,14 +44,20 @@ from pipeline import resume, run
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate and upload YouTube videos about finance/banking.",
+        description="Generate and upload YouTube videos.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
     parser.add_argument(
+        "--channel",
+        default="mike_explains_money",
+        help="Channel name — loads config from channels/<name>/config.yaml "
+        "(default: mike_explains_money)",
+    )
+    parser.add_argument(
         "--config",
-        default="config.yaml",
-        help="Path to the YAML configuration file (default: config.yaml)",
+        default=None,
+        help="Path to a YAML config file (overrides --channel)",
     )
     parser.add_argument(
         "--topics",
@@ -106,8 +116,13 @@ def main() -> None:
         ],
     )
 
-    # Load configuration
-    config = load_config(args.config)
+    # Resolve config path: --config overrides --channel
+    if args.config:
+        config_path = args.config
+    else:
+        config_path = str(Path("channels") / args.channel / "config.yaml")
+
+    config = load_config(config_path)
 
     # Apply CLI overrides
     overrides: dict = {}
@@ -131,6 +146,7 @@ def main() -> None:
         config = dataclasses.replace(config, **overrides)
 
     log = logging.getLogger(__name__)
+    log.info(f"Channel: {args.channel} | Mode: {config.video_mode}")
 
     # Resume mode: pick up a single video from its output directory
     if args.resume:

@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload",
     "https://www.googleapis.com/auth/youtube.force-ssl",
+    "https://www.googleapis.com/auth/yt-analytics.readonly",
 ]
 
 
@@ -166,7 +167,9 @@ def upload_video(
     if video_tags:
         seen = {t.lower() for t in all_tags}
         for t in video_tags:
-            if len(t) > MAX_TAG_LEN:
+            # Sanitize: strip whitespace, remove < and > (YouTube rejects them)
+            t = t.strip().replace("<", "").replace(">", "")
+            if not t or len(t) > MAX_TAG_LEN:
                 continue
             if t.lower() not in seen:
                 all_tags.append(t)

@@ -1,0 +1,100 @@
+video_count: 5
+video_mode: "ken_burns"
+
+channel:
+  theme: >
+    This channel breaks down how money, banking, and financial systems really work
+    — and how wealth, cash flow, and risk change the rules people live by. We focus on
+    money power, banking behavior, and the invisible thresholds where institutions
+    start treating you differently. Using real-world examples, financial data, and clear
+    explanations, this channel explains how economics, finance, and wealth management
+    actually operate behind the scenes.
+  required_keywords:
+    - money
+    - banking
+    - wealth management
+    - cash
+    - economics
+    - finance
+    - money management
+    - risk
+  disclaimer: >
+    This channel is for educational and informational purposes only. Nothing here
+    constitutes financial, investment, legal, or tax advice. I am not a licensed
+    financial advisor. All opinions expressed are my own. Do your own research and
+    consult a qualified professional before making any financial decisions. Any actions
+    you take based on this content are done at your own risk.
+
+script:
+  min_words: 3500
+  max_words: 4500
+  banned_phrases:
+    - "you should"
+    - "you need to"
+    - "I recommend"
+    - "you must"
+    - "my advice"
+    - "I suggest"
+    - "you have to"
+
+text_model:
+  name: "gemini-3-flash-preview"
+  temperature: 0.9
+  max_output_tokens: 16384
+
+tts:
+  model: "gemini-2.5-flash-preview-tts"
+  voice: "Orus"
+
+image_gen:
+  model: "gemini-2.5-flash-image"
+  reference_image: "assets/mike-investor-thumbnail.jpg"
+  seconds_per_image: 9
+  image_width: 1920
+  image_height: 1080
+  aspect_ratio: "16:9"
+
+thumbnail:
+  width: 1280
+  height: 720
+  min_contrast_ratio: 4.5
+
+video:
+  fps: 24
+  ken_burns_ratio: 0.04
+  codec: "libx264"
+  audio_codec: "aac"
+  bitrate: "8000k"
+
+youtube:
+  client_secrets_file: "client_secrets.json"
+  token_file: "youtube_token.json"
+  category_id: "27"
+  default_language: "en"
+  privacy_status: "private"
+  tags:
+    - money
+    - banking
+    - finance
+    - wealth
+    - economics
+    - financial literacy
+    - wealth management
+    - money management
+
+retry:
+  max_attempts: 3
+  base_delay_seconds: 2
+  max_delay_seconds: 60
+
+scheduling:
+  timezone: "America/New_York"
+  publish_times:
+    - [8, 0]    # 8:00 AM ET
+    - [18, 0]   # 6:00 PM ET
+
+max_parallel_videos: 1
+cleanup_after_upload: false
+
+output:
+  base_dir: "output"

@@ -1,0 +1,100 @@
+video_count: 5
+video_mode: "stock_footage"
+
+channel:
+  theme: >
+    This channel tells gripping first-person stories of relationship betrayal,
+    cheating, and the emotional aftermath. Each video is a dramatic narrated story
+    told from the perspective of someone who discovers infidelity and confronts their
+    partner. Stories build tension through discovery, investigation, and a climactic
+    confrontation. The tone is raw, emotional, and cathartic — giving viewers the
+    vicarious satisfaction of justice in relationships gone wrong.
+  required_keywords:
+    - cheating stories
+    - infidelity
+    - betrayal
+    - relationship
+    - cheating wife
+    - revenge
+  disclaimer: >
+    This is a fictional story created for entertainment purposes only. Any resemblance
+    to real persons, living or dead, or actual events is purely coincidental. The views
+    and situations portrayed do not represent real events or encourage any form of
+    retaliation. Viewer discretion is advised.
+
+script:
+  min_words: 1050
+  max_words: 1350
+  banned_phrases:
+    - "subscribe to my channel"
+    - "like and subscribe"
+    - "hit the bell"
+
+text_model:
+  name: "gemini-3-flash-preview"
+  temperature: 0.9
+  max_output_tokens: 16384
+
+tts:
+  model: "gemini-2.5-flash-preview-tts"
+  voice: "Iapetus"
+
+image_gen:
+  model: "gemini-2.5-flash-image"
+  # No reference_image for stock footage mode
+  seconds_per_image: 9
+  image_width: 1920
+  image_height: 1080
+  aspect_ratio: "16:9"
+
+stock_footage:
+  seconds_per_clip: 10
+
+subtitles:
+  font_size: 56
+  margin_v: 40
+
+thumbnail:
+  width: 1280
+  height: 720
+  min_contrast_ratio: 3.0
+  text_overlay: true  # overlay text with Pillow instead of AI-rendering it
+
+video:
+  fps: 24
+  codec: "libx264"
+  audio_codec: "aac"
+  bitrate: "8000k"
+
+youtube:
+  client_secrets_file: "client_secrets.json"
+  token_file: "youtube_token_heartbreak.json"
+  category_id: "24"
+  default_language: "en"
+  privacy_status: "private"
+  tags:
+    - cheating stories
+    - infidelity stories
+    - cheating wife story
+    - relationship drama
+    - betrayal stories
+    - revenge story
+    - divorce stories
+    - audio stories
+
+retry:
+  max_attempts: 3
+  base_delay_seconds: 2
+  max_delay_seconds: 60
+
+scheduling:
+  timezone: "America/New_York"
+  publish_times:
+    - [8, 0]    # 8:00 AM ET
+    - [18, 0]   # 6:00 PM ET
+
+max_parallel_videos: 1
+cleanup_after_upload: false
+
+output:
+  base_dir: "output"
