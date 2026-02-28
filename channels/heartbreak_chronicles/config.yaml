@@ -51,8 +51,8 @@ stock_footage:
   seconds_per_clip: 10
 
 subtitles:
-  font_size: 56
-  margin_v: 40
+  font_size: 24
+  margin_v: 20
 
 thumbnail:
   width: 1280
