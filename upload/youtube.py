@@ -6,6 +6,7 @@ thumbnail setting, and metadata configuration.
 
 import logging
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -167,8 +168,10 @@ def upload_video(
     if video_tags:
         seen = {t.lower() for t in all_tags}
         for t in video_tags:
-            # Sanitize: strip whitespace, remove < and > (YouTube rejects them)
-            t = t.strip().replace("<", "").replace(">", "")
+            # Sanitize: strip whitespace, remove chars YouTube rejects
+            t = t.strip()
+            t = re.sub(r'[<>#@{}[\]|\\^~`]', '', t)
+            t = t.strip()
             if not t or len(t) > MAX_TAG_LEN:
                 continue
             if t.lower() not in seen:
@@ -193,27 +196,35 @@ def upload_video(
         "status": status,
     }
 
-    media = MediaFileUpload(
-        str(video_path),
-        mimetype="video/mp4",
-        resumable=True,
-        chunksize=256 * 1024,  # 256KB chunks
-    )
-
     logger.info(f"Uploading video: {title}")
-    request = service.videos().insert(
-        part="snippet,status",
-        body=body,
-        media_body=media,
-    )
 
-    # Resumable upload loop
-    response = None
-    while response is None:
-        status, response = request.next_chunk()
-        if status:
-            progress = int(status.progress() * 100)
-            logger.info(f"Upload progress: {progress}%")
+    def _do_upload(upload_body):
+        req = service.videos().insert(
+            part="snippet,status",
+            body=upload_body,
+            media_body=MediaFileUpload(
+                str(video_path), mimetype="video/mp4",
+                resumable=True, chunksize=256 * 1024,
+            ),
+        )
+        resp = None
+        while resp is None:
+            st, resp = req.next_chunk()
+            if st:
+                progress = int(st.progress() * 100)
+                logger.info(f"Upload progress: {progress}%")
+        return resp
+
+    # Try upload; if tags are invalid, retry without per-video tags
+    try:
+        response = _do_upload(body)
+    except Exception as e:
+        if "invalidTags" in str(e):
+            logger.warning(f"Invalid tags detected, retrying with default tags only: {e}")
+            body["snippet"]["tags"] = list(config.youtube_tags)
+            response = _do_upload(body)
+        else:
+            raise
 
     video_id = response["id"]
     logger.info(f"Video uploaded: ID={video_id}")
