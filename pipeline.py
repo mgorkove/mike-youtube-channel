@@ -22,7 +22,7 @@ from pathlib import Path
 
 from google import genai
 
-from assembly import stock_video, video
+from assembly import shorts, stock_video, video
 from config_loader import Config
 from generators import images, speech, stock_footage, subtitles, text, thumbnail
 from quality import checks
@@ -313,13 +313,31 @@ def _process_single_video(
             stage_name="description",
             config=config,
         )
+        description = _ensure_description_footer(description, config)
         _save_artifact(output_dir / "description.txt", description)
         ckpt.mark_done("description")
         logger.info("Description generated")
 
-    # --- Stage 3b: Tags (use default tags only) ---
-    video_tags: list[str] = []
-    logger.info("Stage 3b: Using default tags only")
+    # --- Stage 3b: Tags ---
+    tags_path = output_dir / "tags.json"
+    if ckpt.is_done("tags") and tags_path.exists():
+        video_tags = json.loads(tags_path.read_text(encoding="utf-8"))
+        logger.info(f"Stage 3b: Loaded {len(video_tags)} cached tags")
+    else:
+        logger.info("Stage 3b: Generating per-video tags...")
+        try:
+            video_tags = _retry_on_error(
+                fn=lambda: text.generate_tags(topic, title, config, client),
+                stage_name="tags",
+                config=config,
+            )
+            _save_artifact(tags_path, json.dumps(video_tags, indent=2))
+            ckpt.mark_done("tags")
+            logger.info(f"Tags: {len(video_tags)} generated")
+        except Exception as e:
+            logger.warning(f"Tag generation failed, using defaults: {e}")
+            video_tags = []
+            ckpt.mark_done("tags")
 
     # --- Stage 4: Voiceover ---
     audio_path = output_dir / "audio.wav"
@@ -360,6 +378,27 @@ def _process_single_video(
             output_dir, config, client, ckpt, quality_results,
         )
 
+    # --- Stage 8b: YouTube Short (stock_footage mode only) ---
+    short_path = output_dir / "short.mp4"
+    srt_path = output_dir / "subtitles.srt"
+    if config.video_mode == "stock_footage" and srt_path.exists():
+        if ckpt.is_done("short") and short_path.exists():
+            logger.info("Stage 8b: Loaded cached Short")
+        else:
+            logger.info("Stage 8b: Generating YouTube Short...")
+            try:
+                short_path = shorts.generate_short(
+                    video_path, audio_path, srt_path, output_dir, config,
+                )
+                ckpt.mark_done("short")
+                logger.info("Short generated successfully")
+            except Exception as e:
+                logger.warning(f"Short generation failed (non-fatal): {e}")
+                short_path = None
+                ckpt.mark_done("short")
+    else:
+        short_path = None
+
     # --- Stage 9: Upload ---
     video_id = None
     video_url = None
@@ -385,6 +424,28 @@ def _process_single_video(
         video_url = upload_result.video_url
         ckpt.mark_done("upload", video_id=video_id, video_url=video_url)
         logger.info(f"Uploaded: {video_url}")
+
+    # --- Stage 9b: Upload Short ---
+    if short_path and short_path.exists():
+        if ckpt.is_done("short_upload"):
+            logger.info("Stage 9b: Short already uploaded")
+        elif config.dry_run:
+            logger.info("Stage 9b: Skipping Short upload (dry run)")
+            ckpt.mark_done("short_upload")
+        else:
+            logger.info("Stage 9b: Uploading YouTube Short...")
+            try:
+                short_title = title[:90] + " #Shorts"
+                short_desc = f"Full story: https://www.youtube.com/watch?v={video_id}\n\n{description}"
+                short_result = youtube.upload_video(
+                    short_path, short_title, short_desc, thumb_path, config,
+                    video_tags=video_tags,
+                )
+                ckpt.mark_done("short_upload", short_video_id=short_result.video_id)
+                logger.info(f"Short uploaded: {short_result.video_url}")
+            except Exception as e:
+                logger.warning(f"Short upload failed (non-fatal): {e}")
+                ckpt.mark_done("short_upload")
 
     # --- Stage 10: Cleanup ---
     if not config.dry_run and video_url and config.cleanup_after_upload:
@@ -726,6 +787,18 @@ def _check_script(script_text: str, config: Config) -> checks.CheckResult:
 def _check_description(description: str, config: Config) -> checks.CheckResult:
     """Run all description quality checks."""
     return checks.CheckResult(True, "Description passes all checks")
+
+
+def _ensure_description_footer(description: str, config: Config) -> str:
+    """Ensure the description always contains the disclaimer.
+
+    The LLM sometimes truncates the keyword line and disclaimer.
+    This post-processes to guarantee they're present.
+    """
+    disclaimer = config.disclaimer
+    if disclaimer and disclaimer not in description:
+        description = description.rstrip() + "\n\n" + disclaimer
+    return description
 
 
 # ---------------------------------------------------------------------------

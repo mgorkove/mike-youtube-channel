@@ -27,27 +27,37 @@ def _generate_single_image(
     index: int,
     prompt: str,
     images_dir: Path,
-    reference_img: Image.Image,
+    reference_img: Image.Image | None,
     config: Config,
     client: genai.Client,
     total: int,
 ) -> Path:
     """Generate a single image with per-image retry logic."""
-    full_prompt = (
-        f"Generate a bold, colorful cartoon illustration in 16:9 aspect ratio. "
-        f"The scene shows: {prompt}. "
-        f"Draw the man from the reference photo as a cartoon character "
-        f"with the same face, build, and appearance as in the reference. "
-        f"Vibrant colors, clean cartoon style, YouTube animated explainer style. "
-        f"No text or watermarks in the image."
-    )
+    if reference_img:
+        full_prompt = (
+            f"Generate a bold, colorful cartoon illustration in 16:9 aspect ratio. "
+            f"The scene shows: {prompt}. "
+            f"Draw the man from the reference photo as a cartoon character "
+            f"with the same face, build, and appearance as in the reference. "
+            f"Vibrant colors, clean cartoon style, YouTube animated explainer style. "
+            f"No text or watermarks in the image."
+        )
+        contents = [full_prompt, reference_img]
+    else:
+        full_prompt = (
+            f"Generate a semi-realistic digital art illustration in 16:9 aspect ratio. "
+            f"The scene shows: {prompt}. "
+            f"Bold colors, stylized comic book rendering style with clean outlines. "
+            f"No text or watermarks in the image."
+        )
+        contents = [full_prompt]
     img_path = images_dir / f"{index + 1:03d}.png"
 
     for attempt in range(PER_IMAGE_RETRIES):
         try:
             response = client.models.generate_content(
                 model=config.image_model,
-                contents=[full_prompt, reference_img],
+                contents=contents,
                 config=types.GenerateContentConfig(
                     response_modalities=["TEXT", "IMAGE"],
                 ),
@@ -92,7 +102,9 @@ def generate_images(
     alongside the prompt. Failed images are retried individually.
     Images are saved at config dimensions (1920x1080).
     """
-    reference_img = Image.open(config.reference_image_path)
+    reference_img = None
+    if config.reference_image_path:
+        reference_img = Image.open(config.reference_image_path)
     images_dir = output_dir / "images"
     images_dir.mkdir(parents=True, exist_ok=True)
     total = len(image_prompts)

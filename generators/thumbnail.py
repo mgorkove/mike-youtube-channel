@@ -220,7 +220,13 @@ def generate_thumbnail(
         overlay_text = parts[0].replace("EXACT_TEXT:", "").strip()
         image_prompt = parts[1].strip() if len(parts) > 1 else raw_output
     logger.info(f"Overlay text: {overlay_text}")
-    logger.info(f"Thumbnail prompt: {image_prompt[:120]}...")
+
+    # Use fixed image prompt from config if set (overrides LLM-generated prompt)
+    if config.thumbnail_fixed_image_prompt:
+        image_prompt = config.thumbnail_fixed_image_prompt
+        logger.info(f"Using fixed image prompt from config")
+    else:
+        logger.info(f"Thumbnail prompt: {image_prompt[:120]}...")
 
     if config.thumbnail_text_overlay:
         # --- Composite mode: portrait + background + text ---

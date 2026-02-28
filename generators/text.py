@@ -326,7 +326,9 @@ def extract_image_prompts(
     client: genai.Client,
 ) -> list[str]:
     """Split the script into visual segments and generate image prompts."""
-    prompt = f"""You are a visual director for a YouTube finance education channel.
+    prompt = f"""You are a visual director for a YouTube channel.
+
+Channel theme: {config.channel_theme}
 
 Given this script, divide it into exactly {num_images} sequential visual segments and create an image generation prompt for each one.
 
@@ -335,16 +337,15 @@ SCRIPT:
 
 For each segment, write a detailed image generation prompt that:
 - Describes a specific, concrete visual scene (not abstract concepts)
-- Features a man (the host/narrator) acting out or reacting to what's being discussed
-- If the script mentions buying something, show him buying it
-- If the script discusses banks, show him in a bank setting
-- If the script talks about wealth, show visual markers of wealth
-- Uses a bold, colorful cartoon illustration style (like an animated explainer video)
-- Specifies setting and composition
+- Shows characters, settings, and actions that match what's being narrated
+- Each scene should be visually distinct from the others (different locations, characters, gear, lighting)
+- Specifies the setting, character appearance, clothing/gear, and composition
+- Uses a semi-realistic digital art illustration style with bold colors and clean outlines
 - Do NOT use the words "photorealistic" or "realistic" anywhere in the prompts
+- Do NOT include any text or watermarks in the image descriptions
 
 Return ONLY a JSON array of exactly {num_images} prompt strings. Example:
-["A cartoon man in a business suit standing confidently in a modern bank lobby, bold colorful cartoon illustration style", "The same cartoon man reviewing financial documents at a desk with city skyline visible through windows, vibrant cartoon style"]"""
+["A semi-realistic digital art illustration of a person in uniform standing in a detailed environment, bold stylized rendering with clean outlines", "A semi-realistic digital art illustration of a figure in a different setting performing an action, dramatic lighting and bold colors"]"""
 
     response = client.models.generate_content(
         model=config.text_model_name,

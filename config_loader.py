@@ -98,6 +98,7 @@ class Config:
     # Thumbnail text overlay (if true, overlay text with Pillow instead of AI rendering)
     thumbnail_text_overlay: bool = False
     thumbnail_font_path: str = "assets/Anton-Regular.ttf"
+    thumbnail_fixed_image_prompt: str = ""
 
     # Stock footage settings (stock_footage mode)
     seconds_per_clip: int = 10
@@ -216,6 +217,7 @@ def load_config(config_path: str = "config.yaml") -> Config:
         subtitle_margin_v=raw.get("subtitles", {}).get("margin_v", 40),
         thumbnail_text_overlay=raw.get("thumbnail", {}).get("text_overlay", False),
         thumbnail_font_path=raw.get("thumbnail", {}).get("font_path", "assets/Anton-Regular.ttf"),
+        thumbnail_fixed_image_prompt=raw.get("thumbnail", {}).get("fixed_image_prompt", ""),
     )
 
     return config

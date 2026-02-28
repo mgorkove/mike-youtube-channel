@@ -1,4 +1,4 @@
-video_count: 14
+video_count: 21
 video_mode: "stock_footage"
 
 channel:
@@ -23,8 +23,8 @@ channel:
     retaliation. Viewer discretion is advised.
 
 script:
-  min_words: 1050
-  max_words: 1350
+  min_words: 1400
+  max_words: 1700
   banned_phrases:
     - "subscribe to my channel"
     - "like and subscribe"
@@ -88,8 +88,9 @@ retry:
 scheduling:
   timezone: "America/New_York"
   publish_times:
-    - [8, 0]
-    - [18, 0]
+    - [8, 0]    # 8:00 AM ET
+    - [14, 0]   # 2:00 PM ET
+    - [20, 0]   # 8:00 PM ET
 
 max_parallel_videos: 14
 render_workers: 20

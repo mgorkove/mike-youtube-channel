@@ -1,5 +1,6 @@
 """Pull channel analytics from YouTube Data API v3."""
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -9,7 +10,16 @@ from upload.youtube import get_youtube_service
 
 
 def main():
-    config = load_config()
+    parser = argparse.ArgumentParser(description="Pull YouTube channel analytics.")
+    parser.add_argument(
+        "--channel",
+        default="mike_explains_money",
+        help="Channel name (default: mike_explains_money)",
+    )
+    args = parser.parse_args()
+
+    config_path = str(Path("channels") / args.channel / "config.yaml")
+    config = load_config(config_path)
     service = get_youtube_service(config)
 
     # 1. Get channel info
