@@ -110,8 +110,34 @@ Return ONLY a JSON array of topic strings, nothing else."""
     )
 
     topics = _extract_json_array(response.text.strip())
-    if len(topics) < count:
-        raise ValueError(f"Expected {count} topics, got {len(topics)}")
+    if not topics:
+        raise ValueError("Got 0 topics from LLM")
+
+    # If the LLM returned fewer topics than requested (common with malformed
+    # JSON where some strings can't be extracted), generate the remaining ones
+    # individually rather than failing the whole pipeline.
+    while len(topics) < count:
+        logger.warning(f"Only got {len(topics)}/{count} topics, generating 1 more...")
+        extra_resp = client.models.generate_content(
+            model=config.text_model_name,
+            contents=(
+                f"{prompt}\n\nGenerate exactly 1 topic. "
+                f"Do NOT repeat any of these: {topics}"
+            ),
+            config=types.GenerateContentConfig(
+                temperature=config.text_model_temperature,
+                max_output_tokens=1024,
+            ),
+        )
+        extra = _extract_json_array(extra_resp.text.strip())
+        if extra:
+            topics.append(extra[0])
+        else:
+            # If even a single-topic request fails, use the raw text
+            raw = extra_resp.text.strip().strip('"').strip("'").strip("[]")
+            if raw:
+                topics.append(raw)
+
     return topics[:count]
 
 
