@@ -76,7 +76,7 @@ YOUTUBE_CLIENT_SECRET=$(fetch_secret "YOUTUBE_CLIENT_SECRET_HEARTBREAK")
 YOUTUBE_REFRESH_TOKEN=$(fetch_secret "YOUTUBE_REFRESH_TOKEN_HEARTBREAK")
 PEXELS_API_KEY=$(fetch_secret "PEXELS_API_KEY")
 EOF
-elif [ "$CHANNEL" = "every_rank_explained" ]; then
+elif [ "$CHANNEL" = "rank_recon" ]; then
     cat >> "$APP_DIR/.env" <<EOF
 YOUTUBE_CLIENT_ID=$(fetch_secret "YOUTUBE_CLIENT_ID_RANKS")
 YOUTUBE_CLIENT_SECRET=$(fetch_secret "YOUTUBE_CLIENT_SECRET_RANKS")

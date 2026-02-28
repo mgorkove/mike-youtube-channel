@@ -22,7 +22,7 @@ from pathlib import Path
 
 from google import genai
 
-from assembly import shorts, stock_video, video
+from assembly import shorts, slideshow, stock_video, video
 from config_loader import Config
 from generators import images, speech, stock_footage, subtitles, text, thumbnail
 from quality import checks
@@ -377,6 +377,8 @@ def _process_single_video(
             output_dir, config, client, ckpt, quality_results,
         )
     else:
+        # ken_burns and slideshow modes both use generated images;
+        # assembly step selects zoom vs static based on video_mode.
         image_paths, num_visuals, video_path, thumb_path = _stages_5_to_8_ken_burns(
             script_text, audio_duration, audio_path, title, topic,
             output_dir, config, client, ckpt, quality_results,
@@ -578,10 +580,17 @@ def _stages_5_to_8_ken_burns(
         logger.info(f"Thumbnail: contrast ratio {contrast_check.message}")
         ckpt.mark_done("thumbnail")
 
-    # Stage 8: Video assembly (Ken Burns)
+    # Stage 8: Video assembly
     video_path = output_dir / "video.mp4"
     if ckpt.is_done("video") and video_path.exists():
         logger.info("Stage 8: Loaded cached video")
+    elif config.video_mode == "slideshow":
+        logger.info("Stage 8: Assembling video (slideshow)...")
+        video_path = slideshow.assemble_video(
+            image_paths, audio_path, output_dir, config
+        )
+        ckpt.mark_done("video")
+        logger.info("Video assembled successfully")
     else:
         logger.info("Stage 8: Assembling video (Ken Burns)...")
         video_path = video.assemble_video(

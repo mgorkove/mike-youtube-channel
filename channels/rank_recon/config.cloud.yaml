@@ -1,0 +1,101 @@
+video_count: 14
+video_mode: "ken_burns"
+
+channel:
+  theme: >
+    This channel takes viewers on an immersive journey through every rank of the
+    world's most elite military units, special forces, and legendary warrior
+    organizations. Each video uses second-person POV narration ("You are now a...")
+    to walk the viewer through the complete rank progression from the lowest recruit
+    to the highest commander. The style is educational but cinematic — covering
+    duties, lifestyle, dangers, pay, and what changes at each level. Illustrations
+    are semi-realistic digital art in a comic book style showing soldiers,
+    operators, warriors, and military scenes.
+  required_keywords:
+    - military
+    - special forces
+    - ranks
+    - military ranks explained
+    - elite military
+  disclaimer: >
+    This video is for educational and entertainment purposes only. Information
+    about military ranks, duties, and operations is based on publicly available
+    sources and may not reflect current classified procedures. We are not
+    affiliated with any military organization. Some details are dramatized
+    for storytelling purposes. Viewer discretion is advised.
+
+script:
+  min_words: 1500
+  max_words: 1800
+  banned_phrases:
+    - "subscribe to my channel"
+    - "like and subscribe"
+    - "hit the bell"
+    - "smash that like button"
+    - "in this video"
+    - "hey guys"
+    - "what's up guys"
+    - "without further ado"
+    - "let's dive in"
+    - "buckle up"
+
+text_model:
+  name: "gemini-3-flash-preview"
+  temperature: 0.9
+  max_output_tokens: 16384
+
+tts:
+  model: "gemini-2.5-flash-preview-tts"
+  voice: "Orus"
+
+image_gen:
+  model: "gemini-2.5-flash-image"
+  seconds_per_image: 7
+  image_width: 1920
+  image_height: 1080
+  aspect_ratio: "16:9"
+
+thumbnail:
+  width: 1280
+  height: 720
+  min_contrast_ratio: 4.5
+
+video:
+  fps: 24
+  ken_burns_ratio: 0.04
+  codec: "libx264"
+  audio_codec: "aac"
+  bitrate: "8000k"
+
+youtube:
+  client_secrets_file: "client_secrets.json"
+  token_file: "youtube_token_ranks.json"
+  category_id: "27"
+  privacy_status: "private"
+  tags:
+    - military ranks
+    - special forces
+    - military explained
+    - army ranks
+    - elite military
+    - soldier life
+    - military training
+    - rank progression
+
+retry:
+  max_attempts: 3
+  base_delay_seconds: 2
+  max_delay_seconds: 60
+
+scheduling:
+  timezone: "America/New_York"
+  publish_times:
+    - [8, 0]
+    - [18, 0]
+
+max_parallel_videos: 14
+render_workers: 20
+cleanup_after_upload: true
+
+output:
+  base_dir: "output"
