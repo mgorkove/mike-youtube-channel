@@ -20,9 +20,9 @@ BANNED text: "EPIC FAIL", "GONE WRONG", "YOU WON'T BELIEVE", "NOT CLICKBAIT", "O
 
 IMAGE PROMPT — Generate a prompt for a NARROW PORTRAIT of just the woman:
 - The image will be generated at a narrow portrait size (roughly 512x720) — head and upper body only
-- Photorealistic attractive woman, 25-35 years old
-- Centered in frame, head and shoulders / upper body crop
-- Wearing a stylish dress (red, pink, blue, teal, or dark colors — vary across videos)
+- Photorealistic attractive woman in her 20s
+- Centered in frame, head to mid-chest crop showing cleavage
+- Wearing a low-cut or revealing dress/top (red, pink, blue, teal, or dark colors — vary across videos) that shows cleavage
 - Expression: slightly surprised, guilty, or caught off-guard — wide eyes, parted lips
 - Dramatic lighting on face — warm oranges, strong highlights, deep shadows
 - Simple dark background (solid dark or subtle gradient) — the background will be replaced
