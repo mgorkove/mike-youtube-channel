@@ -5,6 +5,7 @@ Handles: topic generation, titles, scripts, descriptions, and image prompts.
 
 import json
 import logging
+import re
 from pathlib import Path
 
 from google import genai
@@ -13,6 +14,59 @@ from google.genai import types
 from config_loader import Config
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_json_array(text: str) -> list:
+    """Robustly extract a JSON array from LLM output.
+
+    Handles markdown fences, trailing commas, and unterminated strings.
+    """
+    # Strip markdown code fences
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1]
+        if "```" in text:
+            text = text[: text.rfind("```")]
+        text = text.strip()
+
+    # Try direct parse first
+    try:
+        result = json.loads(text)
+        if isinstance(result, list):
+            return result
+    except json.JSONDecodeError:
+        pass
+
+    # Extract the JSON array substring (first [ to last ])
+    match = re.search(r"\[", text)
+    if match:
+        start = match.start()
+        # Find matching closing bracket
+        depth = 0
+        for i in range(start, len(text)):
+            if text[i] == "[":
+                depth += 1
+            elif text[i] == "]":
+                depth -= 1
+                if depth == 0:
+                    candidate = text[start : i + 1]
+                    try:
+                        return json.loads(candidate)
+                    except json.JSONDecodeError:
+                        # Fix trailing commas before ]
+                        fixed = re.sub(r",\s*]", "]", candidate)
+                        try:
+                            return json.loads(fixed)
+                        except json.JSONDecodeError:
+                            pass
+                    break
+
+    # Last resort: find all quoted strings and build the array
+    strings = re.findall(r'"((?:[^"\\]|\\.)*)"', text)
+    if strings:
+        logger.warning(f"JSON parse failed, extracted {len(strings)} strings via regex")
+        return strings
+
+    raise ValueError(f"Could not extract JSON array from LLM output: {text[:200]}...")
 
 
 def generate_topics(
@@ -55,17 +109,9 @@ Return ONLY a JSON array of topic strings, nothing else."""
         ),
     )
 
-    text = response.text.strip()
-    # Strip markdown code fences if present
-    if text.startswith("```"):
-        text = text.split("\n", 1)[1]
-        if text.endswith("```"):
-            text = text[: text.rfind("```")]
-        text = text.strip()
-
-    topics = json.loads(text)
-    if not isinstance(topics, list) or len(topics) < count:
-        raise ValueError(f"Expected {count} topics, got: {topics}")
+    topics = _extract_json_array(response.text.strip())
+    if len(topics) < count:
+        raise ValueError(f"Expected {count} topics, got {len(topics)}")
     return topics[:count]
 
 
@@ -244,16 +290,7 @@ Return ONLY a JSON array of tag strings, nothing else."""
         ),
     )
 
-    text = response.text.strip()
-    if text.startswith("```"):
-        text = text.split("\n", 1)[1]
-        if text.endswith("```"):
-            text = text[: text.rfind("```")]
-        text = text.strip()
-
-    tags = json.loads(text)
-    if not isinstance(tags, list):
-        raise ValueError(f"Expected JSON array of tags, got: {type(tags)}")
+    tags = _extract_json_array(response.text.strip())
 
     # YouTube allows max 500 characters total for tags; trim if needed
     result = []
@@ -297,16 +334,7 @@ Return ONLY a JSON array of exactly {num_clips} search query strings. Example:
         ),
     )
 
-    text = response.text.strip()
-    if text.startswith("```"):
-        text = text.split("\n", 1)[1]
-        if text.endswith("```"):
-            text = text[: text.rfind("```")]
-        text = text.strip()
-
-    queries = json.loads(text)
-    if not isinstance(queries, list):
-        raise ValueError(f"Expected JSON array, got: {type(queries)}")
+    queries = _extract_json_array(response.text.strip())
 
     # Pad or truncate to exact count
     if len(queries) < num_clips:
@@ -356,17 +384,7 @@ Return ONLY a JSON array of exactly {num_images} prompt strings. Example:
         ),
     )
 
-    text = response.text.strip()
-    # Strip markdown code fences if present
-    if text.startswith("```"):
-        text = text.split("\n", 1)[1]
-        if text.endswith("```"):
-            text = text[: text.rfind("```")]
-        text = text.strip()
-
-    prompts = json.loads(text)
-    if not isinstance(prompts, list):
-        raise ValueError(f"Expected JSON array of image prompts, got: {type(prompts)}")
+    prompts = _extract_json_array(response.text.strip())
 
     # Pad or truncate to exact count
     if len(prompts) < num_images:

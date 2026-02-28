@@ -131,7 +131,11 @@ def run(config: Config) -> list[VideoResult]:
     if len(topics) < config.video_count:
         needed = config.video_count - len(topics)
         logger.info(f"Generating {needed} topic(s)...")
-        generated = text.generate_topics(needed, config, client, existing_titles=existing_titles)
+        generated = _retry_on_error(
+            fn=lambda: text.generate_topics(needed, config, client, existing_titles=existing_titles),
+            stage_name="topic_generation",
+            config=config,
+        )
         topics.extend(generated)
     topics = topics[:config.video_count]
 
