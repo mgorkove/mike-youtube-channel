@@ -205,6 +205,13 @@ def generate_thumbnail(
     )
     raw_output = prompt_response.text.strip()
 
+    # Strip markdown code fences if present
+    if raw_output.startswith("```"):
+        raw_output = raw_output.split("\n", 1)[1]
+        if raw_output.endswith("```"):
+            raw_output = raw_output[: raw_output.rfind("```")]
+        raw_output = raw_output.strip()
+
     # Parse EXACT_TEXT and image prompt
     overlay_text = ""
     image_prompt = raw_output
