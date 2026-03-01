@@ -8,19 +8,11 @@ LAYOUT — follow this exact style:
 3. A LARGE, BOLD curved arrow pointing from the text toward the character — this arrow is MANDATORY and must be clearly visible. The arrow should be thick, red or dark, and impossible to miss.
 4. A WHITE or very light clean background — this is NON-NEGOTIABLE
 
-TEXT — Must follow this exact color pattern:
-- First word: BOLD RED (#CC0000 deep red)
-- Remaining words: BOLD BLACK
+TEXT — The text is ALWAYS "MOST DIE" — no exceptions, no variations:
+- "MOST" in BOLD BLACK
+- "DIE" in BOLD RED (#CC0000 deep red)
 - Thick, heavy, blocky Impact-style font with clean edges
-- 2-3 words only
 - Text appears ONCE only — no duplicated or floating text
-
-Good text examples:
-- "What It Takes to Be Every Navy SEAL Rank" -> "EVERY SEAL" (EVERY in red, SEAL in black)
-- "POV: You're Every Rank in the US Marines" -> "EVERY MARINE" (EVERY in red, MARINE in black)
-- "Your Life as Every Delta Force Rank" -> "DELTA FORCE" (DELTA in red, FORCE in black)
-- "Every SAS Rank Explained" -> "EVERY RANK" (EVERY in red, RANK in black)
-- "What Every Spartan Rank Actually Did" -> "SPARTAN RANKS" (SPARTAN in red, RANKS in black)
 
 CHARACTER — Semi-realistic digital art:
 - NOT a simple cartoon — semi-realistic proportions with stylized rendering
@@ -60,6 +52,6 @@ STRICT BANS:
 - Watermarks or logos
 
 Output format (strictly follow this):
-- First line: EXACT_TEXT: followed by the 2-3 word ALL-CAPS overlay text
+- First line: EXACT_TEXT: MOST DIE
 - Second line: the full image generation prompt as a single paragraph
 - Nothing else
