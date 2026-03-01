@@ -20,7 +20,7 @@ RULES:
 - Anchor on DANGER: use words like deadliest, most dangerous, most feared, most brutal, most secretive
 - Keep under 65 characters — shorter titles perform better on mobile
 - Use Title Case
-- Do NOT just use the plain organization name (e.g., "Navy SEALs") — reframe it around danger
+- You CAN use the organization's real name (e.g., "Navy SEALs", "French Foreign Legion") — pair it with a danger hook when possible
 - Do NOT use "Top 10", "You Won't Believe", or generic clickbait language
 - Do NOT reference specific years
 - Do NOT use hashtags or emojis
