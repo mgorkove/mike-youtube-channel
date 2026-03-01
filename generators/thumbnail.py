@@ -93,17 +93,17 @@ def _overlay_text(
     draw = ImageDraw.Draw(img)
     width, height = img.size
 
-    # Target: text occupies the left ~55% of the frame
-    text_area_width = int(width * 0.55)
-    margin_left = int(width * 0.03)
-    margin_top = int(height * 0.08)
-    margin_bottom = int(height * 0.08)
+    # Target: text fills the left ~70% of the frame with tight margins
+    text_area_width = int(width * 0.68)
+    margin_left = int(width * 0.02)
+    margin_top = int(height * 0.02)
+    margin_bottom = int(height * 0.02)
     available_height = height - margin_top - margin_bottom
 
-    # Find the largest font size that fits all lines in the available area
-    font_size = 72
+    # Find the largest font size that fits all lines in the available area.
+    # Account for stroke outline (adds to rendered size beyond textbbox).
+    font_size = 200
     min_font_size = 24
-    line_spacing_ratio = 1.15
 
     font = None
     while font_size >= min_font_size:
@@ -114,13 +114,16 @@ def _overlay_text(
             font = ImageFont.load_default()
             break
 
+        stroke = max(3, font_size // 15)
         total_height = 0
         fits = True
         for line in lines:
-            bbox = draw.textbbox((0, 0), line, font=font)
+            bbox = draw.textbbox(
+                (0, 0), line, font=font, stroke_width=stroke,
+            )
             line_w = bbox[2] - bbox[0]
             line_h = bbox[3] - bbox[1]
-            total_height += int(line_h * line_spacing_ratio)
+            total_height += line_h
             if line_w > text_area_width:
                 fits = False
                 break
@@ -132,13 +135,30 @@ def _overlay_text(
     if font is None:
         font = ImageFont.load_default()
 
-    # Calculate total text block height for vertical centering
+    # Calculate line heights (including stroke) and spread to fill height
+    outline_width = max(3, font_size // 15)
     line_heights = []
     for line in lines:
-        bbox = draw.textbbox((0, 0), line, font=font)
+        bbox = draw.textbbox(
+            (0, 0), line, font=font, stroke_width=outline_width,
+        )
         line_heights.append(bbox[3] - bbox[1])
-    total_text_height = sum(int(h * line_spacing_ratio) for h in line_heights)
-    y_start = margin_top + (available_height - total_text_height) // 2
+    total_text_height = sum(line_heights)
+
+    # Distribute extra vertical space between lines, capped to avoid
+    # excessive gaps when there are only a few lines.
+    max_gap = int(font_size * 0.25)
+    if len(lines) > 1:
+        line_gap = min(
+            (available_height - total_text_height) / (len(lines) - 1),
+            max_gap,
+        )
+    else:
+        line_gap = 0
+
+    # Center the block vertically if gap was capped
+    used_height = total_text_height + int(line_gap) * max(len(lines) - 1, 0)
+    y_start = margin_top + (available_height - used_height) // 2
 
     # Color assignment: first 2 = orange, last 2 = orange, rest = white
     num_lines = len(lines)
@@ -150,14 +170,13 @@ def _overlay_text(
             line_colors.append(COLOR_WHITE)
 
     # Draw each line with black outline
-    outline_width = max(3, font_size // 15)
     y = y_start
     for line, color, lh in zip(lines, line_colors, line_heights):
         draw.text(
             (margin_left, y), line, font=font, fill=color,
             stroke_width=outline_width, stroke_fill=COLOR_BLACK,
         )
-        y += int(lh * line_spacing_ratio)
+        y += lh + int(line_gap)
 
     return img
 
