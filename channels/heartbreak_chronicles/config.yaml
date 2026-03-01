@@ -1,5 +1,6 @@
 video_count: 5
-video_mode: "stock_footage"
+video_mode: "static_image"
+background_image: "assets/background.png"
 
 channel:
   theme: >
@@ -47,12 +48,9 @@ image_gen:
   image_height: 1080
   aspect_ratio: "16:9"
 
-stock_footage:
-  seconds_per_clip: 10
-
 subtitles:
-  font_size: 24
-  margin_v: 20
+  font_size: 28
+  margin_v: 50
 
 thumbnail:
   model: "gemini-3.1-flash-image-preview"

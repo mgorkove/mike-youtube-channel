@@ -13,7 +13,7 @@ class Config:
     topics: list[str]
     video_count: int
 
-    # Video mode: "ken_burns" (cartoon images) or "stock_footage" (Pexels clips + subtitles)
+    # Video mode: "ken_burns", "stock_footage", "slideshow", or "static_image"
     video_mode: str
 
     # Channel
@@ -106,6 +106,9 @@ class Config:
     subtitle_font_size: int = 56
     subtitle_margin_v: int = 40
 
+    # Static image background (static_image mode)
+    background_image_path: Path | None = None
+
     # Manual titles (one per topic, in order; empty = auto-generate)
     titles: list[str] = None
 
@@ -166,6 +169,13 @@ def load_config(config_path: str = "config.yaml") -> Config:
         if not ref_image.exists():
             raise FileNotFoundError(f"Reference image not found: {ref_image}")
 
+    # Background image (static_image mode)
+    bg_image = None
+    if raw.get("background_image"):
+        bg_image = config_dir / raw["background_image"]
+        if not bg_image.exists():
+            raise FileNotFoundError(f"Background image not found: {bg_image}")
+
     config = Config(
         topics=raw.get("topics", []),
         video_count=raw.get("video_count", 1),
@@ -220,6 +230,7 @@ def load_config(config_path: str = "config.yaml") -> Config:
         thumbnail_text_overlay=raw.get("thumbnail", {}).get("text_overlay", False),
         thumbnail_font_path=raw.get("thumbnail", {}).get("font_path", "assets/Anton-Regular.ttf"),
         thumbnail_fixed_image_prompt=raw.get("thumbnail", {}).get("fixed_image_prompt", ""),
+        background_image_path=bg_image,
     )
 
     return config

@@ -22,7 +22,7 @@ from pathlib import Path
 
 from google import genai
 
-from assembly import shorts, slideshow, stock_video, video
+from assembly import shorts, slideshow, static_image, stock_video, video
 from config_loader import Config
 from generators import images, speech, stock_footage, subtitles, text, thumbnail
 from quality import checks
@@ -371,7 +371,12 @@ def _process_single_video(
         logger.info(f"Voiceover: {audio_duration:.1f}s")
 
     # --- Stages 5-8 branch by video_mode ---
-    if config.video_mode == "stock_footage":
+    if config.video_mode == "static_image":
+        image_paths, num_visuals, video_path, thumb_path = _stages_5_to_8_static_image(
+            script_text, audio_duration, audio_path, title, topic,
+            output_dir, config, client, ckpt, quality_results,
+        )
+    elif config.video_mode == "stock_footage":
         image_paths, num_visuals, video_path, thumb_path = _stages_5_to_8_stock_footage(
             script_text, audio_duration, audio_path, title, topic,
             output_dir, config, client, ckpt, quality_results,
@@ -387,7 +392,7 @@ def _process_single_video(
     # --- Stage 8b: YouTube Short (stock_footage mode only) ---
     short_path = output_dir / "short.mp4"
     srt_path = output_dir / "subtitles.srt"
-    if config.video_mode == "stock_footage" and srt_path.exists():
+    if config.video_mode in ("stock_footage", "static_image") and srt_path.exists():
         if ckpt.is_done("short") and short_path.exists():
             logger.info("Stage 8b: Loaded cached Short")
         else:
@@ -500,26 +505,51 @@ def _stages_5_to_8_ken_burns(
     script_text, audio_duration, audio_path, title, topic,
     output_dir, config, client, ckpt, quality_results,
 ) -> tuple[list[Path], int]:
-    """Stages 5-8 for ken_burns mode: image prompts → images → thumbnail → video."""
+    """Stages 5-8 for ken_burns/slideshow mode: image prompts → images → thumbnail → video."""
     # Stage 5: Image prompts
     prompts_path = output_dir / "image_prompts.json"
     num_images = math.ceil(audio_duration / config.seconds_per_image)
+
+    # Slideshow uses segment-aware prompts for proportional timing
+    use_segments = config.video_mode == "slideshow"
+    segments_data: list[dict] | None = None
+
     if ckpt.is_done("image_prompts") and prompts_path.exists():
-        image_prompts = json.loads(prompts_path.read_text(encoding="utf-8"))
+        cached = json.loads(prompts_path.read_text(encoding="utf-8"))
+        # Detect whether cached data has segment info
+        if cached and isinstance(cached[0], dict) and "segment" in cached[0]:
+            segments_data = cached
+            image_prompts = [s["prompt"] for s in cached]
+        else:
+            image_prompts = cached
         logger.info(f"Stage 5: Loaded {len(image_prompts)} cached image prompts")
     else:
         logger.info("Stage 5: Extracting image prompts...")
-        image_prompts = _retry_on_error(
-            fn=lambda: text.extract_image_prompts(
-                script_text, num_images, config, client
-            ),
-            stage_name="image_prompts",
-            config=config,
-        )
-        _save_artifact(
-            output_dir / "image_prompts.json",
-            json.dumps(image_prompts, indent=2),
-        )
+        if use_segments:
+            segments_data = _retry_on_error(
+                fn=lambda: text.extract_image_prompts_with_segments(
+                    script_text, num_images, config, client
+                ),
+                stage_name="image_prompts",
+                config=config,
+            )
+            image_prompts = [s["prompt"] for s in segments_data]
+            _save_artifact(
+                prompts_path,
+                json.dumps(segments_data, indent=2),
+            )
+        else:
+            image_prompts = _retry_on_error(
+                fn=lambda: text.extract_image_prompts(
+                    script_text, num_images, config, client
+                ),
+                stage_name="image_prompts",
+                config=config,
+            )
+            _save_artifact(
+                prompts_path,
+                json.dumps(image_prompts, indent=2),
+            )
         ckpt.mark_done("image_prompts")
         logger.info(f"Image prompts: {len(image_prompts)}")
 
@@ -586,8 +616,17 @@ def _stages_5_to_8_ken_burns(
         logger.info("Stage 8: Loaded cached video")
     elif config.video_mode == "slideshow":
         logger.info("Stage 8: Assembling video (slideshow)...")
+        # Calculate per-image durations from audio word timestamps
+        clip_durations = None
+        if segments_data:
+            logger.info("Transcribing audio for transition timing...")
+            whisper_words = subtitles.transcribe_words(audio_path)
+            clip_durations = slideshow.calculate_durations(
+                segments_data, audio_duration, whisper_words
+            )
         video_path = slideshow.assemble_video(
-            image_paths, audio_path, output_dir, config
+            image_paths, audio_path, output_dir, config,
+            clip_durations=clip_durations,
         )
         ckpt.mark_done("video")
         logger.info("Video assembled successfully")
@@ -600,6 +639,79 @@ def _stages_5_to_8_ken_burns(
         logger.info("Video assembled successfully")
 
     return image_paths, len(image_paths), video_path, thumb_path
+
+
+def _stages_5_to_8_static_image(
+    script_text, audio_duration, audio_path, title, topic,
+    output_dir, config, client, ckpt, quality_results,
+) -> tuple[list[Path], int]:
+    """Stages 5-8 for static_image mode: subtitles → thumbnail → video."""
+    # Stage 5-6: Skipped (no visuals to generate or download)
+    logger.info("Stages 5-6: Skipped (static image mode)")
+
+    # Stage 6b: Generate subtitles
+    srt_path = output_dir / "subtitles.srt"
+    if ckpt.is_done("subtitles") and srt_path.exists():
+        logger.info("Stage 6b: Loaded cached subtitles")
+    else:
+        logger.info("Stage 6b: Generating subtitles...")
+        srt_path = subtitles.generate_srt(script_text, audio_duration, srt_path)
+        ckpt.mark_done("subtitles")
+        logger.info("Subtitles generated")
+
+    # Stage 7: Thumbnail
+    thumb_path = output_dir / "thumbnail.png"
+    if ckpt.is_done("thumbnail") and thumb_path.exists():
+        logger.info("Stage 7: Loaded cached thumbnail")
+    else:
+        logger.info("Stage 7: Generating thumbnail...")
+        thumb_path = _retry_on_error(
+            fn=lambda: thumbnail.generate_thumbnail(
+                title, topic, output_dir, config, client
+            ),
+            stage_name="thumbnail",
+            config=config,
+        )
+        contrast_check = checks.check_contrast_ratio(
+            thumb_path, config.thumbnail_min_contrast
+        )
+        quality_results["thumbnail_contrast"] = contrast_check
+        if not contrast_check.passed:
+            logger.warning(f"Thumbnail contrast warning: {contrast_check.message}")
+            logger.info("Regenerating thumbnail for better contrast...")
+            thumb_path = _retry_on_error(
+                fn=lambda: thumbnail.generate_thumbnail(
+                    title, topic, output_dir, config, client
+                ),
+                stage_name="thumbnail_retry",
+                config=config,
+            )
+            contrast_check = checks.check_contrast_ratio(
+                thumb_path, config.thumbnail_min_contrast
+            )
+            quality_results["thumbnail_contrast_retry"] = contrast_check
+        logger.info(f"Thumbnail: contrast ratio {contrast_check.message}")
+        ckpt.mark_done("thumbnail")
+
+    # Stage 8: Static image video assembly
+    video_path = output_dir / "video.mp4"
+    if ckpt.is_done("video") and video_path.exists():
+        logger.info("Stage 8: Loaded cached video")
+    else:
+        logger.info("Stage 8: Assembling static image video...")
+        bg_image = config.background_image_path
+        if not bg_image or not bg_image.exists():
+            raise PipelineError(
+                f"Background image not found: {bg_image}. "
+                "Set 'background_image' in config.yaml for static_image mode."
+            )
+        video_path = static_image.assemble_static_image_video(
+            bg_image, audio_path, srt_path, output_dir, config
+        )
+        ckpt.mark_done("video")
+        logger.info("Static image video assembled successfully")
+
+    return [], 0, video_path, thumb_path
 
 
 def _stages_5_to_8_stock_footage(
