@@ -261,7 +261,7 @@ def _generate_full_thumbnail(
         contents.append(reference_img)
 
     response = client.models.generate_content(
-        model=config.image_model,
+        model=config.thumbnail_model,
         contents=contents,
         config=types.GenerateContentConfig(
             response_modalities=["TEXT", "IMAGE"],
@@ -298,7 +298,7 @@ def _generate_composite_thumbnail(
         contents.append(reference_img)
 
     response = client.models.generate_content(
-        model=config.image_model,
+        model=config.thumbnail_model,
         contents=contents,
         config=types.GenerateContentConfig(
             response_modalities=["TEXT", "IMAGE"],

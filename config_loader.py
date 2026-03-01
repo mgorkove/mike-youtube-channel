@@ -44,6 +44,7 @@ class Config:
     reference_image_path: Path | None
 
     # Thumbnail
+    thumbnail_model: str
     thumbnail_width: int
     thumbnail_height: int
     thumbnail_min_contrast: float
@@ -186,6 +187,7 @@ def load_config(config_path: str = "config.yaml") -> Config:
         image_width=image_gen.get("image_width", 1920),
         image_height=image_gen.get("image_height", 1080),
         image_aspect_ratio=image_gen.get("aspect_ratio", "16:9"),
+        thumbnail_model=raw["thumbnail"].get("model", image_gen.get("model", "gemini-2.5-flash-image")),
         thumbnail_width=raw["thumbnail"]["width"],
         thumbnail_height=raw["thumbnail"]["height"],
         thumbnail_min_contrast=raw["thumbnail"]["min_contrast_ratio"],

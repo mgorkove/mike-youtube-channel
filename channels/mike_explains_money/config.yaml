@@ -55,6 +55,7 @@ image_gen:
   aspect_ratio: "16:9"
 
 thumbnail:
+  model: "gemini-3.1-flash-image-preview"
   width: 1280
   height: 720
   min_contrast_ratio: 4.5
