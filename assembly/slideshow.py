@@ -1,14 +1,16 @@
 """Video assembly with static images (slideshow mode).
 
 Each image is displayed for a duration derived from its narration segment's
-word count, so transitions align with natural breaks in the script.  Falls
-back to equal durations when no per-image timing is supplied.
+text, aligned to Whisper word timestamps so transitions match natural breaks
+in the script.  Falls back to equal durations when no per-image timing is
+supplied.
 
 Uses ffmpeg's -loop flag for fast per-image clip rendering, then concatenates
 all clips with the audio track.
 """
 
 import logging
+import re
 import shutil
 import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -21,55 +23,65 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_RENDER_WORKERS = 4
 
+# Maximum Whisper words to skip when looking for the next segment word.
+_MAX_LOOKAHEAD = 5
+
+
+def _norm(word: str) -> str:
+    """Lowercase and strip punctuation for fuzzy word matching."""
+    return re.sub(r"[^\w]", "", word.lower())
+
 
 def calculate_durations(
     segments: list[dict],
     audio_duration: float,
     whisper_words: list[tuple[str, float, float]],
 ) -> list[float]:
-    """Calculate per-image durations from Whisper word timestamps.
+    """Calculate per-image durations by aligning segment text to the Whisper
+    transcript.
 
-    Maps each segment's word count to the corresponding Whisper-transcribed
-    words (sequentially, proportionally) and uses the actual audio timestamps
-    to determine exact transition points.
+    Walks through both the segment words and Whisper words in order, using
+    greedy text matching (with a small lookahead) to find where each segment
+    starts and ends in the audio.  This keeps image transitions aligned with
+    the actual narration instead of relying on proportional word counts.
     """
-    # Count words per segment from the LLM output
-    seg_word_counts = [
-        max(len(seg.get("segment", "").split()), 1) for seg in segments
-    ]
-    total_seg_words = sum(seg_word_counts)
-    total_whisper_words = len(whisper_words)
+    if not whisper_words or not segments:
+        n = max(len(segments), 1)
+        return [audio_duration / n] * n
 
-    # Map segment word counts → Whisper word indices proportionally
-    # This handles mismatches between LLM segment text and Whisper output
-    durations = []
-    whisper_pos = 0
+    w_norms = [_norm(w[0]) for w in whisper_words]
+    w_pos = 0
+    durations: list[float] = []
 
-    for i, wc in enumerate(seg_word_counts):
-        # How many Whisper words this segment covers (proportional)
-        share = wc / total_seg_words
-        whisper_count = round(share * total_whisper_words)
-        whisper_count = max(whisper_count, 1)  # at least 1 word
+    for seg_idx, seg in enumerate(segments):
+        seg_words = [_norm(w) for w in seg.get("segment", "").split() if _norm(w)]
+        seg_start_pos = w_pos
 
-        # Don't overshoot
-        if whisper_pos + whisper_count > total_whisper_words:
-            whisper_count = total_whisper_words - whisper_pos
-        # Last segment takes all remaining
-        if i == len(seg_word_counts) - 1:
-            whisper_count = total_whisper_words - whisper_pos
+        for sw in seg_words:
+            # Try to find this segment word in the next few Whisper words
+            best = None
+            for la in range(min(_MAX_LOOKAHEAD, len(whisper_words) - w_pos)):
+                if w_norms[w_pos + la] == sw:
+                    best = la
+                    break
+            if best is not None:
+                w_pos += best + 1
+            # else: word not found (TTS/Whisper mismatch) — skip it
 
-        if whisper_count <= 0:
-            # Edge case: ran out of words, give a tiny duration
+        # Last segment claims all remaining Whisper words
+        if seg_idx == len(segments) - 1:
+            w_pos = len(whisper_words)
+
+        # Derive duration from timestamps
+        if w_pos > seg_start_pos and seg_start_pos < len(whisper_words):
+            end_idx = min(w_pos - 1, len(whisper_words) - 1)
+            t_start = whisper_words[seg_start_pos][1]
+            t_end = whisper_words[end_idx][2]
+            durations.append(max(t_end - t_start, 0.1))
+        else:
             durations.append(0.1)
-            continue
 
-        seg_start = whisper_words[whisper_pos][1]  # start of first word
-        seg_end = whisper_words[whisper_pos + whisper_count - 1][2]  # end of last word
-        durations.append(seg_end - seg_start)
-        whisper_pos += whisper_count
-
-    # Adjust so durations sum to exactly audio_duration
-    # (Whisper timestamps may not perfectly cover the full audio)
+    # Scale so durations sum to exactly audio_duration
     total = sum(durations)
     if total > 0:
         scale = audio_duration / total
