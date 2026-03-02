@@ -66,19 +66,24 @@ def _extract_srt_segment(
     start_time: float,
     end_time: float,
     output_path: Path,
+    max_words: int = 5,
 ) -> Path:
-    """Extract and re-time SRT subtitles for the Short's time window."""
+    """Extract, re-time, and re-chunk SRT subtitles for a Short.
+
+    The original SRT may have up to 10 words per chunk (designed for
+    landscape video).  For vertical Shorts we re-chunk into smaller
+    groups of *max_words* so the large mobile font doesn't overflow.
+    Timestamps are linearly interpolated within each original entry.
+    """
     lines = srt_path.read_text(encoding="utf-8").strip().split("\n")
 
-    entries = []
+    # --- parse original entries ---
+    raw_entries: list[tuple[float, float, str]] = []
     i = 0
     while i < len(lines):
-        # Skip blank lines
         if not lines[i].strip():
             i += 1
             continue
-
-        # Subtitle index
         try:
             int(lines[i].strip())
         except ValueError:
@@ -86,31 +91,41 @@ def _extract_srt_segment(
             continue
         i += 1
 
-        # Timestamp line
         if i >= len(lines) or "-->" not in lines[i]:
             continue
         ts_line = lines[i].strip()
         i += 1
 
-        # Text lines
         text_lines = []
         while i < len(lines) and lines[i].strip():
             text_lines.append(lines[i].strip())
             i += 1
 
-        # Parse timestamps
         parts = ts_line.split(" --> ")
         sub_start = _srt_time_to_seconds(parts[0].strip())
         sub_end = _srt_time_to_seconds(parts[1].strip())
 
-        # Keep only subtitles within our window
         if sub_end > start_time and sub_start < end_time:
-            # Re-time relative to clip start
             new_start = max(0, sub_start - start_time)
             new_end = min(end_time - start_time, sub_end - start_time)
-            entries.append((new_start, new_end, "\n".join(text_lines)))
+            raw_entries.append((new_start, new_end, " ".join(text_lines)))
 
-    # Write new SRT
+    # --- re-chunk into smaller word groups ---
+    entries: list[tuple[float, float, str]] = []
+    for start, end, text in raw_entries:
+        words = text.split()
+        if len(words) <= max_words:
+            entries.append((start, end, text))
+            continue
+        duration = end - start
+        total_words = len(words)
+        for j in range(0, total_words, max_words):
+            chunk = words[j : j + max_words]
+            chunk_start = start + duration * (j / total_words)
+            chunk_end = start + duration * (min(j + max_words, total_words) / total_words)
+            entries.append((chunk_start, chunk_end, " ".join(chunk)))
+
+    # --- write SRT ---
     with open(output_path, "w", encoding="utf-8") as f:
         for idx, (start, end, text) in enumerate(entries, 1):
             f.write(f"{idx}\n")
@@ -141,6 +156,7 @@ def generate_short(
     srt_path: Path,
     output_dir: Path,
     config: Config,
+    background_image: Path | None = None,
 ) -> Path:
     """Generate a YouTube Short from a long-form video.
 
@@ -148,6 +164,10 @@ def generate_short(
     2. Extract audio segment
     3. Extract and re-time subtitles
     4. Render vertical (9:16) video with large subtitles
+
+    If background_image is provided, the short is built from the image + audio
+    directly instead of extracting from video_path. This avoids double subtitles
+    when the main video already has burned-in subtitles (e.g. static_image mode).
     """
     audio_duration = _get_audio_duration(audio_path)
     start_time, end_time = _find_dramatic_segment(srt_path, audio_duration)
@@ -168,36 +188,65 @@ def generate_short(
     # Build subtitle filter with large font for mobile
     srt_escaped = str(short_srt).replace("\\", "/").replace(":", "\\:")
     force_style = (
-        "FontSize=42,"
+        "FontSize=16,"
         "PrimaryColour=&H00FFFFFF,"
         "OutlineColour=&H00000000,"
-        "Outline=4,"
+        "BackColour=&H80000000,"
+        "BorderStyle=4,"
+        "Outline=1,"
         "Bold=1,"
         "Alignment=2,"
-        "MarginV=120,"
+        "MarginL=20,"
+        "MarginR=20,"
+        "MarginV=60,"
         "FontName=Arial"
     )
     subtitle_filter = f"subtitles={srt_escaped}:force_style='{force_style}'"
 
-    # Single ffmpeg command: extract segment, crop to 9:16, burn subtitles
     output_path = output_dir / "short.mp4"
-    cmd = [
-        FFMPEG, "-y",
-        "-ss", str(start_time),
-        "-t", str(clip_duration),
-        "-i", str(video_path),
-        "-vf", (
-            f"crop=ih*9/16:ih,"
-            f"scale={SHORTS_WIDTH}:{SHORTS_HEIGHT},"
-            f"{subtitle_filter}"
-        ),
-        "-c:v", config.video_codec,
-        "-b:v", "6000k",
-        "-c:a", config.audio_codec,
-        "-r", str(config.video_fps),
-        "-pix_fmt", "yuv420p",
-        str(output_path),
-    ]
+
+    if background_image:
+        # Build short from background image + audio directly to avoid
+        # double subtitles (main video already has burned-in subs).
+        cmd = [
+            FFMPEG, "-y",
+            "-loop", "1",
+            "-i", str(background_image),
+            "-ss", str(start_time),
+            "-t", str(clip_duration),
+            "-i", str(audio_path),
+            "-vf", (
+                f"scale=-1:{SHORTS_HEIGHT}:force_original_aspect_ratio=increase,"
+                f"crop={SHORTS_WIDTH}:{SHORTS_HEIGHT},"
+                f"{subtitle_filter}"
+            ),
+            "-c:v", config.video_codec,
+            "-b:v", "6000k",
+            "-c:a", config.audio_codec,
+            "-r", str(config.video_fps),
+            "-pix_fmt", "yuv420p",
+            "-shortest",
+            str(output_path),
+        ]
+    else:
+        # Extract segment from video, crop to 9:16, burn subtitles
+        cmd = [
+            FFMPEG, "-y",
+            "-ss", str(start_time),
+            "-t", str(clip_duration),
+            "-i", str(video_path),
+            "-vf", (
+                f"crop=ih*9/16:ih,"
+                f"scale={SHORTS_WIDTH}:{SHORTS_HEIGHT},"
+                f"{subtitle_filter}"
+            ),
+            "-c:v", config.video_codec,
+            "-b:v", "6000k",
+            "-c:a", config.audio_codec,
+            "-r", str(config.video_fps),
+            "-pix_fmt", "yuv420p",
+            str(output_path),
+        ]
 
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:

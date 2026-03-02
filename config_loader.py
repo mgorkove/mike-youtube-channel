@@ -108,6 +108,7 @@ class Config:
 
     # Static image background (static_image mode)
     background_image_path: Path | None = None
+    shorts_background_image_path: Path | None = None
 
     # Manual titles (one per topic, in order; empty = auto-generate)
     titles: list[str] = None
@@ -176,6 +177,12 @@ def load_config(config_path: str = "config.yaml") -> Config:
         if not bg_image.exists():
             raise FileNotFoundError(f"Background image not found: {bg_image}")
 
+    shorts_bg_image = None
+    if raw.get("shorts_background_image"):
+        shorts_bg_image = config_dir / raw["shorts_background_image"]
+        if not shorts_bg_image.exists():
+            raise FileNotFoundError(f"Shorts background image not found: {shorts_bg_image}")
+
     config = Config(
         topics=raw.get("topics", []),
         video_count=raw.get("video_count", 1),
@@ -231,6 +238,7 @@ def load_config(config_path: str = "config.yaml") -> Config:
         thumbnail_font_path=raw.get("thumbnail", {}).get("font_path", "assets/Anton-Regular.ttf"),
         thumbnail_fixed_image_prompt=raw.get("thumbnail", {}).get("fixed_image_prompt", ""),
         background_image_path=bg_image,
+        shorts_background_image_path=shorts_bg_image,
     )
 
     return config

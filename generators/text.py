@@ -421,3 +421,73 @@ Return ONLY a JSON array of exactly {num_images} prompt strings. Example:
         prompts = prompts[:num_images]
 
     return prompts
+
+
+def extract_image_prompts_with_segments(
+    script: str,
+    num_images: int,
+    config: Config,
+    client: genai.Client,
+) -> list[dict]:
+    """Split the script into natural visual segments with image prompts.
+
+    Returns a list of dicts with 'prompt' (image generation prompt) and
+    'segment' (the corresponding narration text).  Segment word counts
+    are used downstream to calculate proportional display durations so
+    that image transitions align with the narration.
+    """
+    prompt = f"""You are a visual director for a YouTube channel.
+
+Channel theme: {config.channel_theme}
+
+Given this script, divide it into approximately {num_images} sequential visual segments. Split at NATURAL break points — when the topic shifts, a new scene begins, or a new rank/stage/character is introduced. Do NOT split mid-sentence.
+
+Most segments should cover roughly 2-3 seconds of narration, but it's fine for some to be shorter (1-2 seconds) or longer (up to 5 seconds) if the content naturally calls for it. Prioritize transitions that feel right over hitting an exact count.
+
+SCRIPT:
+{script}
+
+For each segment, return:
+- "prompt": a detailed image generation prompt for that segment
+- "segment": the EXACT script text (copy-pasted verbatim) that this image covers
+
+Image prompt guidelines:
+- Describes a specific, concrete visual scene (not abstract concepts)
+- Shows characters, settings, and actions that match what's being narrated
+- Each scene should be visually distinct from the others (different locations, characters, gear, lighting)
+- Specifies the setting, character appearance, clothing/gear, and composition
+- Uses a semi-realistic digital art illustration style with bold colors and clean outlines
+- Do NOT use the words "photorealistic" or "realistic" anywhere in the prompts
+- Do NOT include any text or watermarks in the image descriptions
+
+Return ONLY a JSON array of objects. Example:
+[{{"prompt": "A semi-realistic digital art illustration of a young recruit stepping off a bus at a military base, dawn light, bold colors", "segment": "You're 18. You just stepped off the bus at Fort Benning."}}, {{"prompt": "A semi-realistic digital art illustration of soldiers running an obstacle course, dramatic perspective", "segment": "The drill sergeant is already screaming. You hit the mud and start crawling."}}]"""
+
+    response = client.models.generate_content(
+        model=config.text_model_name,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            temperature=0.7,
+            max_output_tokens=16384,
+        ),
+    )
+
+    segments = _extract_json_array(response.text.strip())
+
+    # Validate structure — each item must be a dict with prompt + segment
+    valid = []
+    for item in segments:
+        if isinstance(item, dict) and "prompt" in item and "segment" in item:
+            valid.append(item)
+        elif isinstance(item, str):
+            # Fallback: LLM returned plain strings instead of objects
+            valid.append({"prompt": item, "segment": ""})
+
+    if not valid:
+        raise ValueError("LLM returned no valid image prompt segments")
+
+    logger.info(
+        f"Extracted {len(valid)} image segments "
+        f"(target was ~{num_images})"
+    )
+    return valid

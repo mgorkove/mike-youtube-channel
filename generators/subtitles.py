@@ -27,6 +27,35 @@ def _format_srt_time(seconds: float) -> str:
     return f"{hours:02d}:{minutes:02d}:{secs:02d},{millis:03d}"
 
 
+def transcribe_words(audio_path: Path) -> list[tuple[str, float, float]]:
+    """Transcribe audio and return word-level timestamps.
+
+    Returns a list of (word, start_seconds, end_seconds) tuples.
+    """
+    if not audio_path.exists():
+        raise FileNotFoundError(f"Audio file not found: {audio_path}")
+
+    logger.info(f"Transcribing audio for word timestamps: {audio_path}")
+    model = WhisperModel(WHISPER_MODEL, device="cpu", compute_type="int8")
+    segments, _info = model.transcribe(
+        str(audio_path),
+        word_timestamps=True,
+        language="en",
+    )
+
+    words = []
+    for segment in segments:
+        if segment.words:
+            for w in segment.words:
+                words.append((w.word.strip(), w.start, w.end))
+
+    if not words:
+        raise ValueError("Whisper produced no words from the audio")
+
+    logger.info(f"Transcribed {len(words)} words with timestamps")
+    return words
+
+
 def generate_srt(
     script: str,
     audio_duration: float,
