@@ -96,6 +96,9 @@ class Config:
     # Description generation prompt (optional — channel-specific description style)
     description_generation_prompt: str = ""
 
+    # Topic generation prompt (optional — channel-specific topic guidance)
+    topic_generation_prompt: str = ""
+
     # Thumbnail text overlay (if true, overlay text with Pillow instead of AI rendering)
     thumbnail_text_overlay: bool = False
     thumbnail_font_path: str = "assets/Anton-Regular.ttf"
@@ -158,6 +161,12 @@ def load_config(config_path: str = "config.yaml") -> Config:
     desc_prompt = ""
     if desc_prompt_path.exists():
         desc_prompt = desc_prompt_path.read_text(encoding="utf-8").strip()
+
+    # Load topic generation prompt (optional, next to config file)
+    topic_prompt_path = config_dir / "topic_generation_prompt.md"
+    topic_prompt = ""
+    if topic_prompt_path.exists():
+        topic_prompt = topic_prompt_path.read_text(encoding="utf-8").strip()
 
     # Normalize the disclaimer (collapse whitespace from YAML multiline)
     disclaimer = " ".join(raw["channel"]["disclaimer"].split())
@@ -226,6 +235,7 @@ def load_config(config_path: str = "config.yaml") -> Config:
         thumbnail_strategist_prompt=thumb_prompt,
         title_generation_prompt=title_prompt,
         description_generation_prompt=desc_prompt,
+        topic_generation_prompt=topic_prompt,
         publish_timezone=raw.get("scheduling", {}).get("timezone", "America/New_York"),
         publish_times=raw.get("scheduling", {}).get("publish_times", [[8, 0], [18, 0]]),
         max_parallel_videos=raw.get("max_parallel_videos", 1),

@@ -86,10 +86,14 @@ IMPORTANT: The channel already has videos on these topics. Do NOT generate topic
 
 Each new topic must be clearly distinct from all of the above."""
 
+    topic_guidance = ""
+    if config.topic_generation_prompt:
+        topic_guidance = f"\n\n{config.topic_generation_prompt}\n"
+
     prompt = f"""You are a YouTube content strategist. Your job is to generate video topics that match this channel's theme and will get clicks.
 
 Channel theme: {config.channel_theme}
-
+{topic_guidance}
 Generate exactly {count} unique video topic ideas. Each topic should:
 - Be something people would type into YouTube search or click on in their feed
 - Match the channel's theme and tone exactly
