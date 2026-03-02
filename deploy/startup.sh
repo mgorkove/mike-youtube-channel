@@ -91,14 +91,29 @@ echo "Building Docker image..."
 docker build -t video-pipeline "$APP_DIR"
 
 # ---------- Run pipeline ----------
-echo "Starting pipeline for channel: $CHANNEL..."
+# Sunday: full pipeline (generate + upload first batch within quota)
+# Mon-Thu: upload pending videos from previous generation run
+DAY_OF_WEEK=$(date +%u)  # 1=Monday ... 7=Sunday
+
 PIPELINE_EXIT=0
-docker run --rm \
-    --env-file "$APP_DIR/.env" \
-    -v "$APP_DIR/output:/app/output" \
-    video-pipeline \
-    --channel "$CHANNEL" \
-    --config "channels/${CHANNEL}/config.cloud.yaml" || PIPELINE_EXIT=$?
+if [ "$DAY_OF_WEEK" = "7" ]; then
+    echo "Sunday: Full pipeline run (generate + upload) for $CHANNEL..."
+    docker run --rm \
+        --env-file "$APP_DIR/.env" \
+        -v "$APP_DIR/output:/app/output" \
+        video-pipeline \
+        --channel "$CHANNEL" \
+        --config "channels/${CHANNEL}/config.cloud.yaml" || PIPELINE_EXIT=$?
+else
+    echo "Weekday: Uploading pending videos for $CHANNEL..."
+    docker run --rm \
+        --env-file "$APP_DIR/.env" \
+        -v "$APP_DIR/output:/app/output" \
+        video-pipeline \
+        --channel "$CHANNEL" \
+        --config "channels/${CHANNEL}/config.cloud.yaml" \
+        --upload-pending || PIPELINE_EXIT=$?
+fi
 
 echo "Pipeline exited with code: $PIPELINE_EXIT"
 

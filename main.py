@@ -39,7 +39,7 @@ import sys
 from pathlib import Path
 
 from config_loader import load_config
-from pipeline import resume, run
+from pipeline import resume, run, upload_pending
 
 
 def main() -> None:
@@ -89,6 +89,13 @@ def main() -> None:
         "--dry-run",
         action="store_true",
         help="Run the full pipeline but skip uploading to YouTube",
+    )
+    parser.add_argument(
+        "--upload-pending",
+        action="store_true",
+        help="Upload videos that were generated but not yet uploaded. "
+        "Scans the output directory for pending uploads and processes "
+        "up to ~5 videos per run (within YouTube API daily quota).",
     )
     parser.add_argument(
         "--resume",
@@ -148,8 +155,12 @@ def main() -> None:
     log = logging.getLogger(__name__)
     log.info(f"Channel: {args.channel} | Mode: {config.video_mode}")
 
+    # Upload-pending mode: upload previously generated videos
+    if args.upload_pending:
+        log.info("Uploading pending videos...")
+        results = upload_pending(config)
     # Resume mode: pick up a single video from its output directory
-    if args.resume:
+    elif args.resume:
         log.info(f"Resuming pipeline from: {args.resume}")
         result = resume(args.resume, config)
         results = [result]

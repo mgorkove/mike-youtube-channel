@@ -14,6 +14,7 @@ import logging
 import math
 import re
 import shutil
+import threading
 import time
 import wave
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -84,6 +85,34 @@ class _Checkpoint:
         return self._data["data"].get(key, default)
 
 
+class _UploadBudget:
+    """Thread-safe YouTube API quota budget tracker.
+
+    The YouTube Data API v3 has a default daily quota of 10,000 units.
+    Each upload cycle (videos.insert + thumbnails.set + videos.update)
+    costs ~1,700 units, allowing roughly 5 uploads per day.
+    """
+
+    COST_PER_UPLOAD = 1700
+
+    def __init__(self, daily_quota: int = 10_000, reserved: int = 200):
+        self._lock = threading.Lock()
+        self._remaining = daily_quota - reserved
+
+    def has_budget(self) -> bool:
+        """Check if there's enough budget for one more upload."""
+        with self._lock:
+            return self._remaining >= self.COST_PER_UPLOAD
+
+    def try_use(self) -> bool:
+        """Try to consume budget for one upload. Returns True if allowed."""
+        with self._lock:
+            if self._remaining >= self.COST_PER_UPLOAD:
+                self._remaining -= self.COST_PER_UPLOAD
+                return True
+            return False
+
+
 def resume(output_dir: str | Path, config: Config) -> VideoResult:
     """Resume a single video from a previous output directory.
 
@@ -104,8 +133,10 @@ def resume(output_dir: str | Path, config: Config) -> VideoResult:
 
     client = genai.Client()
     manual_title = ckpt.get("manual_title")
+    publish_at = ckpt.get("publish_at")
     return _process_single_video(
-        topic, config, client, manual_title=manual_title, output_dir_override=output_dir
+        topic, config, client, manual_title=manual_title,
+        output_dir_override=output_dir, publish_at=publish_at,
     )
 
 
@@ -157,6 +188,11 @@ def run(config: Config) -> list[VideoResult]:
     max_workers = min(config.max_parallel_videos, len(topics))
     logger.info(f"Processing {len(topics)} video(s) with {max_workers} worker(s)")
 
+    # YouTube API quota: 10,000 units/day, ~1,700 per upload ≈ 5 uploads/day.
+    # Videos that exceed the budget are generated but upload is deferred
+    # to the next --upload-pending run.
+    upload_budget = _UploadBudget() if not config.dry_run else None
+
     if max_workers <= 1:
         # Sequential (original behavior)
         for i, topic in enumerate(topics):
@@ -170,6 +206,7 @@ def run(config: Config) -> list[VideoResult]:
                     topic, config, client, manual_title=manual_title,
                     existing_titles=existing_titles,
                     publish_at=schedule[i],
+                    upload_budget=upload_budget,
                 )
                 results.append(result)
                 logger.info(f"Completed: {result.video_url or 'dry-run'}")
@@ -195,6 +232,7 @@ def run(config: Config) -> list[VideoResult]:
                     manual_title=manual_title,
                     existing_titles=existing_titles,
                     publish_at=schedule[i],
+                    upload_budget=upload_budget,
                 )
                 future_to_idx[future] = (i, topic)
 
@@ -242,6 +280,81 @@ def run(config: Config) -> list[VideoResult]:
     return results
 
 
+def upload_pending(config: Config) -> list[VideoResult]:
+    """Upload videos that were generated but not yet uploaded.
+
+    Scans the output directory for videos with completed generation
+    (video stage done) but pending upload, and uploads them within
+    the daily YouTube API quota (~5 uploads per day).
+    """
+    output_base = config.output_base_dir
+    if not output_base.exists():
+        logger.info("No output directory found")
+        return []
+
+    # Find videos with completed generation but pending upload
+    pending: list[Path] = []
+    for video_dir in sorted(output_base.iterdir()):
+        if not video_dir.is_dir():
+            continue
+        ckpt_path = video_dir / CHECKPOINT_FILE
+        if not ckpt_path.exists():
+            continue
+        ckpt = _Checkpoint(video_dir)
+        if ckpt.is_done("video") and not ckpt.is_done("upload"):
+            pending.append(video_dir)
+
+    if not pending:
+        logger.info("No videos pending upload")
+        return []
+
+    logger.info(f"Found {len(pending)} video(s) pending upload")
+
+    budget = _UploadBudget()
+    client = genai.Client()
+    results: list[VideoResult] = []
+
+    for video_dir in pending:
+        if not budget.has_budget():
+            remaining = len(pending) - len(results)
+            logger.info(f"Daily quota budget reached, {remaining} video(s) still pending")
+            break
+
+        ckpt = _Checkpoint(video_dir)
+        topic = ckpt.get("topic")
+        logger.info(f"Uploading: {topic}")
+
+        try:
+            result = _process_single_video(
+                topic=topic,
+                config=config,
+                client=client,
+                manual_title=ckpt.get("manual_title"),
+                output_dir_override=video_dir,
+                publish_at=ckpt.get("publish_at"),
+                upload_budget=budget,
+            )
+            results.append(result)
+            logger.info(f"Uploaded: {result.video_url or 'deferred'}")
+        except QuotaExceededError:
+            remaining = len(pending) - len(results)
+            logger.info(f"YouTube API quota exceeded, {remaining} video(s) still pending")
+            break
+        except Exception as e:
+            logger.error(f"Failed to upload {video_dir.name}: {e}", exc_info=True)
+            results.append(
+                VideoResult(
+                    topic=topic or str(video_dir.name), title="",
+                    video_id=None, video_url=None,
+                    success=False, error=str(e),
+                )
+            )
+
+    uploaded = sum(1 for r in results if r.video_url)
+    logger.info(f"Upload batch complete: {uploaded}/{len(results)} uploaded")
+    return results
+
+
 def _process_single_video(
     topic: str,
     config: Config,
@@ -250,6 +363,7 @@ def _process_single_video(
     output_dir_override: Path | None = None,
     existing_titles: list[str] | None = None,
     publish_at: str | None = None,
+    upload_budget: _UploadBudget | None = None,
 ) -> VideoResult:
     """Process a single video through all pipeline stages.
 
@@ -263,7 +377,7 @@ def _process_single_video(
 
     ckpt = _Checkpoint(output_dir)
     # Persist identity info so resume() can reload it later.
-    ckpt.mark_done("_init", topic=topic, manual_title=manual_title)
+    ckpt.mark_done("_init", topic=topic, manual_title=manual_title, publish_at=publish_at)
 
     # --- Stage 1: Title ---
     if ckpt.is_done("title"):
@@ -397,9 +511,17 @@ def _process_single_video(
             logger.info("Stage 8b: Loaded cached Short")
         else:
             logger.info("Stage 8b: Generating YouTube Short...")
+            # For static_image mode, pass background image so the short is
+            # built from the image directly (avoids double subtitles since
+            # the main video already has burned-in subs).
+            # Prefer dedicated shorts background if configured.
+            bg_image = None
+            if config.video_mode == "static_image":
+                bg_image = config.shorts_background_image_path or config.background_image_path
             try:
                 short_path = shorts.generate_short(
                     video_path, audio_path, srt_path, output_dir, config,
+                    background_image=bg_image,
                 )
                 ckpt.mark_done("short")
                 logger.info("Short generated successfully")
@@ -420,6 +542,8 @@ def _process_single_video(
     elif config.dry_run:
         logger.info("Stage 9: Skipping upload (dry run)")
         ckpt.mark_done("upload", video_id=None, video_url=None)
+    elif upload_budget and not upload_budget.try_use():
+        logger.info("Stage 9: Upload deferred (daily YouTube API quota budget reached)")
     else:
         logger.info("Stage 9: Uploading to YouTube...")
         upload_result = _retry_on_error(
@@ -442,6 +566,9 @@ def _process_single_video(
             logger.info("Stage 9b: Short already uploaded")
         elif config.dry_run:
             logger.info("Stage 9b: Skipping Short upload (dry run)")
+            ckpt.mark_done("short_upload")
+        elif upload_budget and not upload_budget.try_use():
+            logger.info("Stage 9b: Short upload deferred (daily quota budget reached)")
             ckpt.mark_done("short_upload")
         else:
             logger.info("Stage 9b: Uploading YouTube Short...")
@@ -873,6 +1000,10 @@ def _retry_with_check(generate_fn, check_fn, stage_name: str, config: Config):
     )
 
 
+class QuotaExceededError(PipelineError):
+    """Raised when the YouTube API daily quota is exhausted."""
+
+
 def _retry_on_error(fn, stage_name: str, config: Config):
     """Retry a function on exception with exponential backoff."""
     last_error = None
@@ -881,6 +1012,11 @@ def _retry_on_error(fn, stage_name: str, config: Config):
             return fn()
         except Exception as e:
             last_error = e
+            # Quota errors won't resolve until midnight PT — fail immediately
+            if "quotaExceeded" in str(e):
+                raise QuotaExceededError(
+                    f"[{stage_name}] YouTube API quota exceeded"
+                ) from e
             logger.warning(
                 f"[{stage_name}] Attempt {attempt + 1}/{config.retry_max_attempts} "
                 f"error: {e}"

@@ -145,22 +145,33 @@ fi
 # ---------- 5. Create Instance Schedule ----------
 echo "5. Creating instance schedules..."
 
-# Start schedule: Sunday 6:00 AM ET (11:00 UTC)
+# Remove old schedules if attached (safe to fail if they don't exist)
+for POLICY in pipeline-start pipeline-stop; do
+    gcloud compute instances remove-resource-policies "$VM_NAME" \
+        --zone="$ZONE" --project="$PROJECT" \
+        --resource-policies="$POLICY" 2>/dev/null || true
+    gcloud compute resource-policies delete "$POLICY" \
+        --region="$REGION" --project="$PROJECT" --quiet 2>/dev/null || true
+done
+
+# Start schedule: Sun-Thu at 6:00 AM ET (11:00 UTC)
+# Sunday = full pipeline (generate + upload batch)
+# Mon-Thu = upload pending videos (~15 min each)
 gcloud compute resource-policies create instance-schedule "pipeline-start" \
     --project="$PROJECT" \
     --region="$REGION" \
-    --vm-start-schedule="0 11 * * 0" \
+    --vm-start-schedule="0 11 * * 0-4" \
     --timezone="UTC" \
-    --description="Start video pipeline VM every Sunday at 6am ET" \
+    --description="Start video pipeline VM Sun-Thu at 6am ET" \
     2>/dev/null || echo "  pipeline-start schedule already exists"
 
-# Stop schedule: Monday 2:00 AM ET (7:00 UTC) — safety net
+# Stop schedule: Friday 2:00 AM ET (7:00 UTC) — safety net
 gcloud compute resource-policies create instance-schedule "pipeline-stop" \
     --project="$PROJECT" \
     --region="$REGION" \
-    --vm-stop-schedule="0 7 * * 1" \
+    --vm-stop-schedule="0 7 * * 5" \
     --timezone="UTC" \
-    --description="Safety net: stop VM Monday 2am ET if still running" \
+    --description="Safety net: stop VM Friday 2am ET if still running" \
     2>/dev/null || echo "  pipeline-stop schedule already exists"
 
 # Attach schedules to VM
@@ -176,11 +187,11 @@ echo ""
 echo "=== Setup complete! ==="
 echo ""
 echo "The VM will automatically:"
-echo "  - Start every Sunday at 6:00 AM ET"
-echo "  - Run heartbreak_chronicles pipeline (21 videos, 14 in parallel)"
-echo "  - Upload 3 videos/day scheduled for Mon-Sun at 8am, 2pm & 8pm ET"
-echo "  - Send an email notification"
-echo "  - Shut itself down"
+echo "  - Sunday 6am ET: Generate 21 videos, upload first ~5 (API quota limit)"
+echo "  - Mon-Thu 6am ET: Upload next batch of ~5 pending videos"
+echo "  - Videos scheduled 3/day Mon-Sun at 8am, 2pm & 8pm ET"
+echo "  - Send email notification after each run"
+echo "  - Shut itself down after each run (~\$0.10/weekday run)"
 echo ""
 echo "To switch channels, update the VM metadata:"
 echo "  gcloud compute instances add-metadata $VM_NAME --zone=$ZONE --project=$PROJECT --metadata=channel=<CHANNEL>"
