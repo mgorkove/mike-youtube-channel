@@ -39,7 +39,7 @@ text_model:
 
 tts:
   model: "gemini-2.5-flash-preview-tts"
-  voice: "Schedar"
+  voice: "Puck"
 
 image_gen:
   model: "gemini-2.5-flash-image"
