@@ -18,7 +18,7 @@ PROJECT="${GCP_PROJECT:?Set GCP_PROJECT env var}"
 REGION="us-central1"
 ZONE="us-central1-a"
 VM_NAME="video-pipeline"
-MACHINE_TYPE="c3d-standard-360"
+MACHINE_TYPE="n2-standard-8"
 DISK_SIZE="100"
 SERVICE_ACCOUNT_NAME="video-pipeline-sa"
 
@@ -80,12 +80,25 @@ create_secret() {
 }
 
 create_secret "GEMINI_API_KEY" "Google Gemini API key"
-create_secret "YOUTUBE_CLIENT_ID" "YouTube OAuth Client ID"
-create_secret "YOUTUBE_CLIENT_SECRET" "YouTube OAuth Client Secret"
-create_secret "YOUTUBE_REFRESH_TOKEN" "YouTube OAuth Refresh Token"
 create_secret "NOTIFY_EMAIL_FROM" "Sender Gmail address"
 create_secret "NOTIFY_EMAIL_TO" "Recipient email address"
 create_secret "NOTIFY_EMAIL_APP_PASSWORD" "Gmail App Password"
+
+# mike_explains_money YouTube credentials (default)
+create_secret "YOUTUBE_CLIENT_ID" "YouTube OAuth Client ID (mike_explains_money)"
+create_secret "YOUTUBE_CLIENT_SECRET" "YouTube OAuth Client Secret (mike_explains_money)"
+create_secret "YOUTUBE_REFRESH_TOKEN" "YouTube OAuth Refresh Token (mike_explains_money)"
+
+# heartbreak_chronicles YouTube credentials + Pexels
+create_secret "YOUTUBE_CLIENT_ID_HEARTBREAK" "YouTube OAuth Client ID (heartbreak_chronicles)"
+create_secret "YOUTUBE_CLIENT_SECRET_HEARTBREAK" "YouTube OAuth Client Secret (heartbreak_chronicles)"
+create_secret "YOUTUBE_REFRESH_TOKEN_HEARTBREAK" "YouTube OAuth Refresh Token (heartbreak_chronicles)"
+create_secret "PEXELS_API_KEY" "Pexels API key (stock footage)"
+
+# rank_recon YouTube credentials
+create_secret "YOUTUBE_CLIENT_ID_RANKS" "YouTube OAuth Client ID (rank_recon)"
+create_secret "YOUTUBE_CLIENT_SECRET_RANKS" "YouTube OAuth Client Secret (rank_recon)"
+create_secret "YOUTUBE_REFRESH_TOKEN_RANKS" "YouTube OAuth Refresh Token (rank_recon)"
 
 echo ""
 echo "   Tip: Run 'python extract_youtube_creds.py' locally to get"
@@ -108,6 +121,7 @@ else
         --service-account="$SA_EMAIL" \
         --scopes="cloud-platform" \
         --metadata-from-file="startup-script=deploy/startup.sh" \
+        --metadata="channel=heartbreak_chronicles" \
         --no-address \
         --tags="video-pipeline" \
         --quiet
@@ -118,6 +132,14 @@ else
     echo "  Stopping VM (will be started by scheduler)..."
     gcloud compute instances stop "$VM_NAME" \
         --zone="$ZONE" --project="$PROJECT" --quiet
+else
+    # Update channel metadata on existing VM
+    echo "  Setting channel metadata to heartbreak_chronicles..."
+    gcloud compute instances add-metadata "$VM_NAME" \
+        --zone="$ZONE" \
+        --project="$PROJECT" \
+        --metadata="channel=heartbreak_chronicles" \
+        --quiet
 fi
 
 # ---------- 5. Create Instance Schedule ----------
@@ -155,10 +177,13 @@ echo "=== Setup complete! ==="
 echo ""
 echo "The VM will automatically:"
 echo "  - Start every Sunday at 6:00 AM ET"
-echo "  - Run the video pipeline (14 videos in parallel)"
-echo "  - Upload videos scheduled for Mon-Sun at 8am & 6pm ET"
+echo "  - Run heartbreak_chronicles pipeline (21 videos, 14 in parallel)"
+echo "  - Upload 3 videos/day scheduled for Mon-Sun at 8am, 2pm & 8pm ET"
 echo "  - Send an email notification"
 echo "  - Shut itself down"
+echo ""
+echo "To switch channels, update the VM metadata:"
+echo "  gcloud compute instances add-metadata $VM_NAME --zone=$ZONE --project=$PROJECT --metadata=channel=<CHANNEL>"
 echo ""
 echo "To test manually:"
 echo "  gcloud compute instances start $VM_NAME --zone=$ZONE --project=$PROJECT"
