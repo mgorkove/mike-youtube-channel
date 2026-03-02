@@ -1,0 +1,103 @@
+video_count: 5
+video_mode: "static_image"
+background_image: "assets/background.png"
+shorts_background_image: "assets/background_shorts.png"
+
+channel:
+  theme: >
+    This channel tells gripping first-person family revenge and justice stories. The narrator
+    is typically an older man — a father, husband, grandfather, or father-in-law — who has been
+    disrespected, betrayed, or taken advantage of by family members: ungrateful adult children,
+    a manipulative wife or ex-wife, an entitled son-in-law or daughter-in-law, or greedy
+    relatives fighting over inheritance. The narrator stays calm, plans carefully, and delivers
+    devastating justice that earns him back his dignity and respect. The tone is satisfying,
+    cathartic, and empowering — giving viewers the vicarious thrill of a man who refuses to
+    be walked over by his own family.
+  required_keywords:
+    - revenge stories
+    - reddit revenge stories
+    - reddit family drama stories
+    - inheritance
+    - family revenge stories
+  disclaimer: >
+    This is a fictional story created for entertainment purposes only. Any resemblance
+    to real persons, living or dead, or actual events is purely coincidental. The views
+    and situations portrayed do not represent real events or encourage any form of
+    retaliation. Viewer discretion is advised.
+
+script:
+  min_words: 1400
+  max_words: 1700
+  banned_phrases:
+    - "subscribe to my channel"
+    - "like and subscribe"
+    - "hit the bell"
+
+text_model:
+  name: "gemini-3-flash-preview"
+  temperature: 0.9
+  max_output_tokens: 16384
+
+tts:
+  model: "gemini-2.5-flash-preview-tts"
+  voice: "Schedar"
+
+image_gen:
+  model: "gemini-2.5-flash-image"
+  seconds_per_image: 9
+  image_width: 1920
+  image_height: 1080
+  aspect_ratio: "16:9"
+
+subtitles:
+  font_size: 28
+  margin_v: 50
+
+thumbnail:
+  model: "gemini-2.5-flash-image"
+  width: 1280
+  height: 720
+  min_contrast_ratio: 3.0
+  text_overlay: true
+  fixed_image_prompt: "An attractive 60 year old man wearing a jacket looking stern facing the camera."
+
+video:
+  fps: 24
+  codec: "libx264"
+  audio_codec: "aac"
+  bitrate: "8000k"
+
+youtube:
+  client_secrets_file: "client_secrets.json"
+  token_file: "youtube_token_revenge.json"
+  category_id: "24"
+  default_language: "en"
+  privacy_status: "private"
+  tags:
+    - reddit revenge stories
+    - reddit family drama stories
+    - inheritance
+    - family revenge stories
+    - karma stories
+    - justice served
+    - ungrateful children
+    - father's revenge
+    - audio stories
+
+retry:
+  max_attempts: 3
+  base_delay_seconds: 2
+  max_delay_seconds: 60
+
+scheduling:
+  timezone: "America/New_York"
+  publish_times:
+    - [8, 0]    # 8:00 AM ET
+    - [14, 0]   # 2:00 PM ET
+    - [20, 0]   # 8:00 PM ET
+
+max_parallel_videos: 1
+cleanup_after_upload: false
+
+output:
+  base_dir: "output"
