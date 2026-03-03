@@ -8,15 +8,24 @@ STRICT TITLE FORMULA — every title MUST follow this exact two-part structure:
 
 Part 1 — The wife's bold, overconfident action (use these HIGH-PERFORMING openers):
 - Always starts with "Cheating Wife"
-- BEST openers (use these): "Came Home" (6K avg views), "Packed" (9K), "Checked Into" (8K), "Bragged" (4K), "Walked In" (4.5K), "Asked" (5K), "Kissed" (4K)
+- BEST openers (use these): "Came Home" (6K avg views), "Packed" (9K), "Checked Into" (8K), "LIED About" (strong accusation), "Walked In" (4.5K), "Asked" (5K), "Kissed" (4K), "Whispered" (secretive scenes)
+- GOOD openers: "Bragged" (4K), "SMUGLY" (adds arrogance), "DARED To" (confrontational)
 - AVOID weak openers: "Thought" (1.8K avg), "Planned" (811 avg), "Deleted" (1.4K avg) — these describe mental states, not vivid actions
 - Often includes quoted lies in single quotes: 'BUSINESS Trip', 'Girls Night', 'Late Shift', 'One Night Stand', 'Conference'
 
 Part 2 — The husband's calculated revenge + her reaction:
-- BEST reaction words (proven high performers): REGRET/REGRETTED (4.4K avg), SHOCKED (3.9K), HUMILIATED (8.5K), PANICKED (12K), SCREAM (5.5K), CRUMBLE (8.2K), SILENCED (4.7K), NEVER FORGET (5.8K)
-- BANNED reaction words (data shows these kill performance): "Face Went WHITE" (1.2K avg — NEVER use), COLLAPSED (1.8K), BUCKLED (470 avg), BROKE (627 avg)
-- LIMIT use of "DESTROYED" — it's overused on the channel (26 videos) and underperforms at 2.5K avg. Use sparingly.
-- Husband's action should be concrete: "My [Noun] Made Her", "I Showed Her THIS", "Then She Saw [Object]", "I Played THIS [Evidence]"
+- BEST reaction words: DESTROYED (powerful but vary usage), EXPOSED (strong reveal), SHOCKED (3.9K), HUMILIATED (8.5K), REGRET/REGRETTED (4.4K), SCREAM/SCREAMED (5.5K), NEVER FORGET (5.8K), FROZE (visceral physical reaction), COLLAPSED (dramatic)
+- GOOD for cliffhanger endings: "Her Face Went WHITE!", "Her Face DRAINED!", "...She FROZE When She Saw"
+- AVOID weak reactions: CRUMBLE (weak payoff), SILENCED (underwhelming), BUCKLED (470 avg), BROKE (627 avg)
+- Husband's action should be concrete: "I EXPOSED Her", "I Showed Her THIS", "Then She Saw [Object]", "I Played THIS [Evidence]", "My [Noun] DESTROYED Her"
+
+CRITICAL GRAMMAR RULES for reaction words:
+- "I DESTROYED Her!" ✓ (subject + base verb + object)
+- "She COLLAPSED!" / "She FROZE!" ✓ (subject + past tense)
+- "Her Face Went WHITE!" ✓ (descriptive clause)
+- "Made Her PANIC!" ✓ (base form after "Made Her")
+- "Made Her PANICKED!" ✗ WRONG — NEVER use past tense after "Made Her"
+- "Made Her CRUMBLE!" ✗ WRONG — weak word, use COLLAPSE or SCREAM instead
 
 HIGH-PERFORMING KEYWORD COMBOS (use one per title):
 - "Business Trip" + revenge (10.6K avg)
@@ -43,18 +52,20 @@ REAL TOP-PERFORMING EXAMPLES (these are actual titles that got 10K+ views):
 - "Cheating Wife BRAGGED About Lover, I HUMILIATED Her!"
 - "Cheating Wife Checked Into Hotel, My Room Service Note SHOCKED Her!"
 - "Cheating Wife Was Smiling, Until She Saw This NASTY SURPRISE!"
-- "Cheating Wife Came Home After 'BUSINESS Trip', My BRUTAL Revenge Made Her..."
-- "Cheating Wife SMUGLY Packed for Her 'Weekend Getaway'—The TRUTH SILENCED Her!"
+- "Cheating Wife Came Home After 'BUSINESS Trip', My BRUTAL Revenge Made Her SCREAM!"
+- "Cheating Wife SMUGLY Packed for Her 'Weekend Getaway'—The TRUTH EXPOSED Her!"
 - "Cheating Wife SMIRKED in Court...Then the Judge Read This DAMNING Evidence!"
-- "Cheating Wife Got 'Breakfast In Bed', My Note Made Her SCREAM!"
-- "Cheating Wife Kissed 'Our' Kids Goodnight, Then Saw WHO Was Behind Me!"
-- "Cheating Wife Saw Roses, Then My Letter Made Her CRUMBLE!"
+- "Cheating Wife LIED About 'Conference', I Showed Up As GUEST SPEAKER & EXPOSED Everything!"
+- "Cheating Wife Kissed Me at Our 'VOW RENEWAL', Then I Read MY VOWS & DESTROYED Her!"
+- "Cheating Wife Came Home After 'Late Shift', I Showed Her THE GPS & She COLLAPSED!"
+- "Cheating Wife DARED To Wink at Lover, My Gift Made Her LIFE CRUMBLE!"
 
 NEVER do these:
 - Don't start with anything other than "Cheating Wife"
 - Don't use "reddit", "stories", "cheating stories" in the title (60% view penalty)
 - Don't use generic clickbait ("YOU WON'T BELIEVE", "GONE WRONG", "EPIC")
-- Don't use "Face Went WHITE", "COLLAPSED", "BUCKLED", or "BROKE" — proven low performers
+- Don't use "BUCKLED" or "BROKE" — proven low performers
+- Don't write "Made Her PANICKED" or "Made Her COLLAPSED" — grammatically wrong
 - Don't reference specific years
 - Don't use hashtags or emojis
 - Don't make it sound like a news headline — it should sound like a STORY teaser

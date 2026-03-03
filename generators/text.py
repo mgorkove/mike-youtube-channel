@@ -15,6 +15,36 @@ from config_loader import Config
 
 logger = logging.getLogger(__name__)
 
+# Grammatically wrong "Made Her [PAST TENSE]" patterns → fix to base form.
+# e.g. "Made Her PANICKED" → "Made Her PANIC"
+_MADE_HER_FIXES = {
+    "PANICKED": "PANIC",
+    "COLLAPSED": "COLLAPSE",
+    "SCREAMED": "SCREAM",
+    "REGRETTED": "REGRET",
+}
+_MADE_HER_PATTERN = re.compile(
+    r"(Made Her )(" + "|".join(_MADE_HER_FIXES.keys()) + r")\b",
+    re.IGNORECASE,
+)
+
+
+def _fix_title_grammar(title: str) -> str:
+    """Fix common grammatical errors in generated titles.
+
+    Catches "Made Her PANICKED" → "Made Her PANIC" etc.
+    """
+    def _replace(m: re.Match) -> str:
+        prefix = m.group(1)
+        word = m.group(2)
+        fixed = _MADE_HER_FIXES.get(word.upper(), word)
+        # Preserve original casing style (all-caps vs title-case)
+        if word.isupper():
+            fixed = fixed.upper()
+        return prefix + fixed
+
+    return _MADE_HER_PATTERN.sub(_replace, title)
+
 
 def _extract_json_array(text: str) -> list:
     """Robustly extract a JSON array from LLM output.
@@ -192,7 +222,9 @@ Return ONLY the title text, nothing else. No quotes, no explanation."""
             max_output_tokens=1024,
         ),
     )
-    return response.text.strip().strip('"').strip("'")
+    title = response.text.strip().strip('"').strip("'")
+    title = _fix_title_grammar(title)
+    return title
 
 
 def generate_script(topic: str, config: Config, client: genai.Client) -> str:
