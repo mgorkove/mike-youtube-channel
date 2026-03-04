@@ -163,7 +163,10 @@ Return ONLY a JSON array of topic strings, nothing else."""
                 max_output_tokens=1024,
             ),
         )
-        extra = _extract_json_array(extra_resp.text.strip())
+        try:
+            extra = _extract_json_array(extra_resp.text.strip())
+        except ValueError:
+            extra = []
         if extra:
             topics.append(extra[0])
         else:
