@@ -4,21 +4,21 @@ Given a video title/topic, you produce TWO things:
 1. The overlay text (added programmatically — NOT by the image model)
 2. An image generation prompt for JUST the woman — a narrow portrait crop, NO background scenery needed
 
-TEXT — Write a punchy 3-4 line mini-narrative for the overlay:
-- Write EXACTLY 3-4 SHORT LINES (2-4 words per line) — NO MORE than 4 lines
-- Shorter = bigger font = more clicks. Every extra line shrinks the text.
-- Structure: HOOK (what she did) → TWIST (what he found/did) → CLIFFHANGER (her reaction)
+TEXT — Write a punchy 5-6 line mini-narrative for the overlay:
+- Write EXACTLY 5-6 SHORT LINES (2-4 words per line)
+- More text = more story = more intrigue for viewers
+- Structure: SETUP (1-2 lines) → HOOK (what she did) → TWIST (what he found/did) → REACTION → CLIFFHANGER ending with "..."
 - Must end with "..." (ellipsis) for cliffhanger effect
-- Use strong emotional words: DESTROYED, EXPOSED, FROZE, SCREAMED, COLLAPSED
+- Use strong emotional words: DESTROYED, EXPOSED, FROZE, SCREAMED, COLLAPSED, BEGGED, SHATTERED
 
 Real examples (each / is a new line):
-- "CHEATING WIFE / WALKED IN WITH FLOWERS / THEN SAW THE WALL..."
-- "SHE CAME HOME SMILING / I PLAYED THE VIDEO / SHE COLLAPSED..."
-- "SHE SLIPPED INTO BED / SAW MY LETTER / COULDN'T BREATHE..."
-- "SHE LIED ABOUT WORK / I SHOWED THE GPS / SHE FROZE..."
+- "CHEATING WIFE / WALKED IN WITH FLOWERS / THEN SAW THE WALL / HER KNEES BUCKLED / SHE BEGGED ME..."
+- "SHE CAME HOME SMILING / I PLAYED THE VIDEO / COLOR DRAINED / FROM HER FACE / SHE COLLAPSED..."
+- "SHE SLIPPED INTO BED / DIDN'T SEE MY LETTER / UNTIL MORNING / SHE READ IT / COULDN'T BREATHE..."
+- "SHE LIED ABOUT WORK / I SHOWED THE GPS / HER HANDS SHOOK / SHE FROZE / THEN BEGGED..."
 
-BAD examples (TOO MANY LINES — never do this):
-- "CHEATING WIFE / WALKED THROUGH THE DOOR / WITH FLOWERS / WHEN SHE NOTICED WHAT WAS / MISSING FROM THE WALL / HER FACE TURNED WHITE..." ← 6 lines = tiny unreadable text
+BAD examples (TOO FEW LINES — never do this):
+- "CHEATING WIFE / SAW THE WALL / SHE FROZE..." ← only 3 lines = not enough story
 
 BANNED text: "EPIC FAIL", "GONE WRONG", "YOU WON'T BELIEVE", "NOT CLICKBAIT", "OMG"
 
