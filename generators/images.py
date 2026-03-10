@@ -39,6 +39,8 @@ def _generate_single_image(
             f"The scene shows: {prompt}. "
             f"Draw the man from the reference photo as a cartoon character "
             f"with the same face, build, and appearance as in the reference. "
+            f"Characters must NOT smile. Their facial expression should match the mood of the scene "
+            f"(serious, focused, exhausted, determined, fearful, etc). No default happy faces. "
             f"Use a subdued, earthy color palette with muted greens, grays, tans, and olive tones. "
             f"Avoid bright or vibrant colors. Clean cartoon style with soft shading and clean outlines. "
             f"No text or watermarks in the image."
@@ -48,6 +50,8 @@ def _generate_single_image(
         full_prompt = (
             f"Generate a muted, desaturated digital art illustration in 16:9 aspect ratio. "
             f"The scene shows: {prompt}. "
+            f"Characters must NOT smile. Their facial expression should match the mood of the scene "
+            f"(serious, focused, exhausted, determined, fearful, etc). No default happy faces. "
             f"Use a subdued, earthy color palette with muted greens, grays, tans, and olive tones. "
             f"Avoid bright or vibrant colors. Stylized rendering with soft shading and clean outlines. "
             f"No text or watermarks in the image."
