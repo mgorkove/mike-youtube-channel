@@ -35,17 +35,29 @@ PORTRAIT_HEIGHT = 720
 
 
 def _create_bokeh_background(width: int, height: int) -> Image.Image:
-    """Create a dark warm-toned background with soft bokeh lights."""
-    # Dark warm base gradient
+    """Create a dark background with subtle red glow and soft bokeh lights."""
     img = Image.new("RGB", (width, height))
     draw = ImageDraw.Draw(img)
 
-    # Vertical gradient: dark brown-black at top to slightly warmer at bottom
+    # Dark base gradient (fast horizontal line approach)
     for y in range(height):
-        r = int(15 + 10 * (y / height))
-        g = int(8 + 5 * (y / height))
+        r = int(12 + 8 * (y / height))
+        g = int(5 + 3 * (y / height))
         b = int(5 + 3 * (y / height))
         draw.line([(0, y), (width, y)], fill=(r, g, b))
+
+    # Add a subtle red glow on the left side (text area) for urgency
+    red_glow = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    glow_draw = ImageDraw.Draw(red_glow)
+    # Large soft red ellipse centered on the left-center
+    glow_draw.ellipse(
+        [-width // 4, height // 6, width // 2, height * 5 // 6],
+        fill=(120, 10, 10, 40),
+    )
+    red_glow = red_glow.filter(ImageFilter.GaussianBlur(radius=80))
+    img = img.convert("RGBA")
+    img = Image.alpha_composite(img, red_glow)
+    img = img.convert("RGB")
 
     # Add bokeh dots (soft warm circles)
     bokeh_layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
@@ -56,10 +68,10 @@ def _create_bokeh_background(width: int, height: int) -> Image.Image:
         x = rng.randint(-50, width + 50)
         y = rng.randint(-50, height + 50)
         radius = rng.randint(15, 80)
-        # Warm amber/orange tones with low opacity
+        # Warm red/amber tones with low opacity
         r = rng.randint(180, 255)
-        g = rng.randint(100, 180)
-        b = rng.randint(20, 60)
+        g = rng.randint(60, 140)
+        b = rng.randint(10, 40)
         alpha = rng.randint(15, 50)
         bokeh_draw.ellipse(
             [x - radius, y - radius, x + radius, y + radius],
@@ -93,11 +105,11 @@ def _overlay_text(
     draw = ImageDraw.Draw(img)
     width, height = img.size
 
-    # Target: text fills the left ~70% of the frame with tight margins
-    text_area_width = int(width * 0.68)
-    margin_left = int(width * 0.02)
-    margin_top = int(height * 0.02)
-    margin_bottom = int(height * 0.02)
+    # Target: text fills the left ~72% of the frame with tight margins
+    text_area_width = int(width * 0.72)
+    margin_left = int(width * 0.03)
+    margin_top = int(height * 0.04)
+    margin_bottom = int(height * 0.04)
     available_height = height - margin_top - margin_bottom
 
     # Find the largest font size that fits all lines in the available area.
@@ -114,7 +126,7 @@ def _overlay_text(
             font = ImageFont.load_default()
             break
 
-        stroke = max(3, font_size // 15)
+        stroke = max(4, font_size // 10)
         total_height = 0
         fits = True
         for line in lines:
@@ -136,7 +148,8 @@ def _overlay_text(
         font = ImageFont.load_default()
 
     # Calculate line heights (including stroke) and spread to fill height
-    outline_width = max(3, font_size // 15)
+    # Thicker stroke = better readability at small thumbnail display sizes
+    outline_width = max(4, font_size // 10)
     line_heights = []
     for line in lines:
         bbox = draw.textbbox(

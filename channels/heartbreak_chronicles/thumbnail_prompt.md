@@ -4,21 +4,17 @@ Given a video title/topic, you produce TWO things:
 1. The overlay text (added programmatically — NOT by the image model)
 2. An image generation prompt for JUST the woman — a narrow portrait crop, NO background scenery needed
 
-TEXT — Write a punchy 5-6 line mini-narrative for the overlay:
-- Write EXACTLY 5-6 SHORT LINES (2-4 words per line)
-- More text = more story = more intrigue for viewers
-- Structure: SETUP (1-2 lines) → HOOK (what she did) → TWIST (what he found/did) → REACTION → CLIFFHANGER ending with "..."
+TEXT — Write a dramatic mini-narrative for the overlay:
+- Write 5-7 SHORT LINES (2-5 words per line) that tell a condensed version of the story
+- Structure: "CHEATING WIFE" at top → what she did → the husband's discovery/action → her dramatic reaction at bottom
 - Must end with "..." (ellipsis) for cliffhanger effect
-- Use strong emotional words: DESTROYED, EXPOSED, FROZE, SCREAMED, COLLAPSED, BEGGED, SHATTERED
 
-Real examples (each / is a new line):
-- "CHEATING WIFE / WALKED IN WITH FLOWERS / THEN SAW THE WALL / HER KNEES BUCKLED / SHE BEGGED ME..."
-- "SHE CAME HOME SMILING / I PLAYED THE VIDEO / COLOR DRAINED / FROM HER FACE / SHE COLLAPSED..."
-- "SHE SLIPPED INTO BED / DIDN'T SEE MY LETTER / UNTIL MORNING / SHE READ IT / COULDN'T BREATHE..."
-- "SHE LIED ABOUT WORK / I SHOWED THE GPS / HER HANDS SHOOK / SHE FROZE / THEN BEGGED..."
-
-BAD examples (TOO FEW LINES — never do this):
-- "CHEATING WIFE / SAW THE WALL / SHE FROZE..." ← only 3 lines = not enough story
+Real examples from the channel (each / is a new line):
+- "CHEATING WIFE / WALKED THROUGH THE DOOR / WITH FLOWERS / WHEN SHE NOTICED WHAT WAS / MISSING FROM THE WALL / HER FACE TURNED WHITE..."
+- "WIFE CAME HOME SMILING / AFTER 1-NIGHT STAND / WHEN SHE SAW THE VIDEO / PLAYING ON THE TV, / HER FACE WENT PALE..."
+- "CHEATING WIFE / SLIPPED INTO BED AFTER / MIDNIGHT / WHEN SHE SAW THE LETTER ON / HER PILLOW / SHE COULDN'T BREATHE..."
+- "CHEATING WIFE / ASKED WHAT WAS FOR DINNER / WHEN I SHOWED HER WHAT I'D / PREPARED / HER FACE TURNED WHITE..."
+- "WIFE BRAGGED ABOUT HER / LOVER / AT OUR DINNER PARTY / WHAT I DID NEXT SILENCED / THE ENTIRE ROOM..."
 
 BANNED text: "EPIC FAIL", "GONE WRONG", "YOU WON'T BELIEVE", "NOT CLICKBAIT", "OMG"
 
