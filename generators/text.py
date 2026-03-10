@@ -433,12 +433,13 @@ For each segment, write a detailed image generation prompt that:
 - Shows characters, settings, and actions that match what's being narrated
 - Each scene should be visually distinct from the others (different locations, characters, gear, lighting)
 - Specifies the setting, character appearance, clothing/gear, and composition
-- Uses a semi-realistic digital art illustration style with bold colors and clean outlines
+- Uses a muted, desaturated cartoon art style with soft shading and clean outlines
+- Color palette should be subdued and earthy: muted greens, grays, tans, olive tones. NO bright or vibrant colors.
 - Do NOT use the words "photorealistic" or "realistic" anywhere in the prompts
 - Do NOT include any text or watermarks in the image descriptions
 
 Return ONLY a JSON array of exactly {num_images} prompt strings. Example:
-["A semi-realistic digital art illustration of a person in uniform standing in a detailed environment, bold stylized rendering with clean outlines", "A semi-realistic digital art illustration of a figure in a different setting performing an action, dramatic lighting and bold colors"]"""
+["A muted, desaturated cartoon illustration of a person in uniform standing in a detailed environment, soft shading with clean outlines, earthy muted color palette", "A muted, desaturated cartoon illustration of a figure in a different setting performing an action, subdued lighting and muted olive-gray tones"]"""
 
     response = client.models.generate_content(
         model=config.text_model_name,
@@ -495,12 +496,13 @@ Image prompt guidelines:
 - Shows characters, settings, and actions that match what's being narrated
 - Each scene should be visually distinct from the others (different locations, characters, gear, lighting)
 - Specifies the setting, character appearance, clothing/gear, and composition
-- Uses a semi-realistic digital art illustration style with bold colors and clean outlines
+- Uses a muted, desaturated cartoon art style with soft shading and clean outlines
+- Color palette should be subdued and earthy: muted greens, grays, tans, olive tones. NO bright or vibrant colors.
 - Do NOT use the words "photorealistic" or "realistic" anywhere in the prompts
 - Do NOT include any text or watermarks in the image descriptions
 
 Return ONLY a JSON array of objects. Example:
-[{{"prompt": "A semi-realistic digital art illustration of a young recruit stepping off a bus at a military base, dawn light, bold colors", "segment": "You're 18. You just stepped off the bus at Fort Benning."}}, {{"prompt": "A semi-realistic digital art illustration of soldiers running an obstacle course, dramatic perspective", "segment": "The drill sergeant is already screaming. You hit the mud and start crawling."}}]"""
+[{{"prompt": "A muted, desaturated cartoon illustration of a young recruit stepping off a bus at a military base, dawn light, earthy muted tones", "segment": "You're 18. You just stepped off the bus at Fort Benning."}}, {{"prompt": "A muted, desaturated cartoon illustration of soldiers running an obstacle course, subdued lighting and muted olive-gray palette", "segment": "The drill sergeant is already screaming. You hit the mud and start crawling."}}]"""
 
     response = client.models.generate_content(
         model=config.text_model_name,

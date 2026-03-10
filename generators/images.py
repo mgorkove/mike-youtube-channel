@@ -35,19 +35,21 @@ def _generate_single_image(
     """Generate a single image with per-image retry logic."""
     if reference_img:
         full_prompt = (
-            f"Generate a bold, colorful cartoon illustration in 16:9 aspect ratio. "
+            f"Generate a muted, desaturated cartoon illustration in 16:9 aspect ratio. "
             f"The scene shows: {prompt}. "
             f"Draw the man from the reference photo as a cartoon character "
             f"with the same face, build, and appearance as in the reference. "
-            f"Vibrant colors, clean cartoon style, YouTube animated explainer style. "
+            f"Use a subdued, earthy color palette with muted greens, grays, tans, and olive tones. "
+            f"Avoid bright or vibrant colors. Clean cartoon style with soft shading and clean outlines. "
             f"No text or watermarks in the image."
         )
         contents = [full_prompt, reference_img]
     else:
         full_prompt = (
-            f"Generate a semi-realistic digital art illustration in 16:9 aspect ratio. "
+            f"Generate a muted, desaturated digital art illustration in 16:9 aspect ratio. "
             f"The scene shows: {prompt}. "
-            f"Bold colors, stylized comic book rendering style with clean outlines. "
+            f"Use a subdued, earthy color palette with muted greens, grays, tans, and olive tones. "
+            f"Avoid bright or vibrant colors. Stylized rendering with soft shading and clean outlines. "
             f"No text or watermarks in the image."
         )
         contents = [full_prompt]
