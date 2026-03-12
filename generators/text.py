@@ -90,6 +90,23 @@ def _extract_json_array(text: str) -> list:
                             pass
                     break
 
+    # Try to extract individual JSON objects from the text (handles
+    # arrays of objects where the outer array is malformed but each
+    # object is valid).
+    objects = []
+    for obj_match in re.finditer(r"\{[^{}]*\}", text):
+        try:
+            obj = json.loads(obj_match.group())
+            if isinstance(obj, dict):
+                objects.append(obj)
+        except json.JSONDecodeError:
+            pass
+    if objects:
+        logger.warning(
+            f"JSON array parse failed, recovered {len(objects)} objects via regex"
+        )
+        return objects
+
     # Last resort: find all quoted strings and build the array
     strings = re.findall(r'"((?:[^"\\]|\\.)*)"', text)
     if strings:
@@ -517,18 +534,35 @@ Return ONLY a JSON array of objects. Example:
 
     # Validate structure — each item must be a dict with prompt + segment
     valid = []
+    plain_string_count = 0
     for item in segments:
         if isinstance(item, dict) and "prompt" in item and "segment" in item:
+            # Filter out entries where the "prompt" value is just the key name
+            if item["prompt"].strip().lower() in ("prompt", ""):
+                continue
             valid.append(item)
         elif isinstance(item, str):
-            # Fallback: LLM returned plain strings instead of objects
+            plain_string_count += 1
+            # Skip bare key names that the regex fallback may have captured
+            if item.strip().lower() in ("prompt", "segment", ""):
+                continue
             valid.append({"prompt": item, "segment": ""})
 
     if not valid:
         raise ValueError("LLM returned no valid image prompt segments")
 
+    # If most items came back as plain strings, segments are missing —
+    # raise so the retry logic can re-attempt and get proper objects.
+    has_segments = sum(1 for v in valid if v["segment"].strip())
+    if has_segments == 0 and plain_string_count > 0:
+        raise ValueError(
+            f"LLM returned {plain_string_count} plain strings instead of "
+            f"prompt+segment objects — segment timing data is missing. "
+            f"Retrying to get structured output."
+        )
+
     logger.info(
         f"Extracted {len(valid)} image segments "
-        f"(target was ~{num_images})"
+        f"(target was ~{num_images}, {has_segments} with segment text)"
     )
     return valid

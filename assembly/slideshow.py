@@ -49,6 +49,15 @@ def calculate_durations(
         n = max(len(segments), 1)
         return [audio_duration / n] * n
 
+    # If all segments have empty text, alignment is impossible — fall back
+    # to equal durations rather than producing near-zero durations.
+    if all(not seg.get("segment", "").strip() for seg in segments):
+        logger.warning(
+            "All segments have empty text — falling back to equal durations"
+        )
+        n = len(segments)
+        return [audio_duration / n] * n
+
     w_norms = [_norm(w[0]) for w in whisper_words]
     w_pos = 0
     durations: list[float] = []
