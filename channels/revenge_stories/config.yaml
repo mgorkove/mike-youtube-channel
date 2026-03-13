@@ -40,7 +40,7 @@ text_model:
 
 tts:
   model: "gemini-2.5-flash-preview-tts"
-  voice: "Puck"
+  voice: "Schedar"
 
 image_gen:
   model: "gemini-2.5-flash-image"
@@ -59,7 +59,7 @@ thumbnail:
   height: 720
   min_contrast_ratio: 3.0
   text_overlay: true
-  fixed_image_prompt: "An attractive 60 year old man wearing a jacket looking stern facing the camera."
+  fixed_image_prompt: "Close-up portrait of a distinguished 60 year old man with silver hair, wearing a dark suit, intense angry expression, clenched jaw, dramatic studio lighting, solid black background, photorealistic"
 
 video:
   fps: 24
