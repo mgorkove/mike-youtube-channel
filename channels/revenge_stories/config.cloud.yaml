@@ -1,5 +1,6 @@
 video_count: 21
 video_mode: "static_image"
+skip_quality_checks: true
 background_image: "assets/background.png"
 
 channel:

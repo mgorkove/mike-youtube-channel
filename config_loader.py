@@ -122,6 +122,9 @@ class Config:
     # Dry run (skip upload)
     dry_run: bool = False
 
+    # Skip quality checks (title length, banned phrases, contrast, audio, image dimensions)
+    skip_quality_checks: bool = False
+
 
 def load_config(config_path: str = "config.yaml") -> Config:
     """Load and validate configuration from YAML + .env files."""
@@ -249,6 +252,7 @@ def load_config(config_path: str = "config.yaml") -> Config:
         thumbnail_fixed_image_prompt=raw.get("thumbnail", {}).get("fixed_image_prompt", ""),
         background_image_path=bg_image,
         shorts_background_image_path=shorts_bg_image,
+        skip_quality_checks=raw.get("skip_quality_checks", False),
     )
 
     return config

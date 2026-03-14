@@ -389,12 +389,19 @@ def _process_single_video(
             title = manual_title
         else:
             logger.info("Stage 1: Generating title...")
-            title = _retry_with_check(
-                generate_fn=lambda: text.generate_title(topic, config, client, existing_titles=existing_titles),
-                check_fn=lambda t: checks.check_title_length(t),
-                stage_name="title",
-                config=config,
-            )
+            if config.skip_quality_checks:
+                title = _retry_on_error(
+                    fn=lambda: text.generate_title(topic, config, client, existing_titles=existing_titles),
+                    stage_name="title",
+                    config=config,
+                )
+            else:
+                title = _retry_with_check(
+                    generate_fn=lambda: text.generate_title(topic, config, client, existing_titles=existing_titles),
+                    check_fn=lambda t: checks.check_title_length(t),
+                    stage_name="title",
+                    config=config,
+                )
         _save_artifact(output_dir / "title.txt", title)
         ckpt.mark_done("title")
         logger.info(f"Title: {title}")
@@ -406,12 +413,19 @@ def _process_single_video(
         logger.info(f"Stage 2: Loaded cached script ({word_count} words)")
     else:
         logger.info("Stage 2: Generating script...")
-        script_text = _retry_with_check(
-            generate_fn=lambda: text.generate_script(topic, config, client),
-            check_fn=lambda s: _check_script(s, config),
-            stage_name="script",
-            config=config,
-        )
+        if config.skip_quality_checks:
+            script_text = _retry_on_error(
+                fn=lambda: text.generate_script(topic, config, client),
+                stage_name="script",
+                config=config,
+            )
+        else:
+            script_text = _retry_with_check(
+                generate_fn=lambda: text.generate_script(topic, config, client),
+                check_fn=lambda s: _check_script(s, config),
+                stage_name="script",
+                config=config,
+            )
         _save_artifact(output_dir / "script.txt", script_text)
         word_count = len(script_text.split())
         ckpt.mark_done("script")
@@ -423,14 +437,23 @@ def _process_single_video(
         logger.info("Stage 3: Loaded cached description")
     else:
         logger.info("Stage 3: Generating description...")
-        description = _retry_with_check(
-            generate_fn=lambda: text.generate_description(
-                topic, title, script_text, config, client
-            ),
-            check_fn=lambda d: _check_description(d, config),
-            stage_name="description",
-            config=config,
-        )
+        if config.skip_quality_checks:
+            description = _retry_on_error(
+                fn=lambda: text.generate_description(
+                    topic, title, script_text, config, client
+                ),
+                stage_name="description",
+                config=config,
+            )
+        else:
+            description = _retry_with_check(
+                generate_fn=lambda: text.generate_description(
+                    topic, title, script_text, config, client
+                ),
+                check_fn=lambda d: _check_description(d, config),
+                stage_name="description",
+                config=config,
+            )
         description = _ensure_description_footer(description, config)
         _save_artifact(output_dir / "description.txt", description)
         ckpt.mark_done("description")
@@ -477,10 +500,11 @@ def _process_single_video(
         audio_path = tts_result.audio_path
         audio_duration = tts_result.duration_seconds
         word_count = len(script_text.split())
-        audio_check = checks.check_audio_file(audio_path, word_count)
-        quality_results["audio"] = audio_check
-        if not audio_check.passed:
-            logger.warning(f"Audio check warning: {audio_check.message}")
+        if not config.skip_quality_checks:
+            audio_check = checks.check_audio_file(audio_path, word_count)
+            quality_results["audio"] = audio_check
+            if not audio_check.passed:
+                logger.warning(f"Audio check warning: {audio_check.message}")
         ckpt.mark_done("voiceover", audio_duration=audio_duration)
         logger.info(f"Voiceover: {audio_duration:.1f}s")
 
@@ -693,13 +717,14 @@ def _stages_5_to_8_ken_burns(
             stage_name="image_generation",
             config=config,
         )
-        for img_path in image_paths:
-            img_check = checks.check_image_exists_and_dimensions(
-                img_path, config.image_width, config.image_height
-            )
-            quality_results[f"image_{img_path.name}"] = img_check
-            if not img_check.passed:
-                raise PipelineError(f"Image check failed: {img_check.message}")
+        if not config.skip_quality_checks:
+            for img_path in image_paths:
+                img_check = checks.check_image_exists_and_dimensions(
+                    img_path, config.image_width, config.image_height
+                )
+                quality_results[f"image_{img_path.name}"] = img_check
+                if not img_check.passed:
+                    raise PipelineError(f"Image check failed: {img_check.message}")
         ckpt.mark_done("images")
         logger.info(f"Generated {len(image_paths)} images")
 
@@ -716,25 +741,26 @@ def _stages_5_to_8_ken_burns(
             stage_name="thumbnail",
             config=config,
         )
-        contrast_check = checks.check_contrast_ratio(
-            thumb_path, config.thumbnail_min_contrast
-        )
-        quality_results["thumbnail_contrast"] = contrast_check
-        if not contrast_check.passed:
-            logger.warning(f"Thumbnail contrast warning: {contrast_check.message}")
-            logger.info("Regenerating thumbnail for better contrast...")
-            thumb_path = _retry_on_error(
-                fn=lambda: thumbnail.generate_thumbnail(
-                    title, topic, output_dir, config, client
-                ),
-                stage_name="thumbnail_retry",
-                config=config,
-            )
+        if not config.skip_quality_checks:
             contrast_check = checks.check_contrast_ratio(
                 thumb_path, config.thumbnail_min_contrast
             )
-            quality_results["thumbnail_contrast_retry"] = contrast_check
-        logger.info(f"Thumbnail: contrast ratio {contrast_check.message}")
+            quality_results["thumbnail_contrast"] = contrast_check
+            if not contrast_check.passed:
+                logger.warning(f"Thumbnail contrast warning: {contrast_check.message}")
+                logger.info("Regenerating thumbnail for better contrast...")
+                thumb_path = _retry_on_error(
+                    fn=lambda: thumbnail.generate_thumbnail(
+                        title, topic, output_dir, config, client
+                    ),
+                    stage_name="thumbnail_retry",
+                    config=config,
+                )
+                contrast_check = checks.check_contrast_ratio(
+                    thumb_path, config.thumbnail_min_contrast
+                )
+                quality_results["thumbnail_contrast_retry"] = contrast_check
+            logger.info(f"Thumbnail: contrast ratio {contrast_check.message}")
         ckpt.mark_done("thumbnail")
 
     # Stage 8: Video assembly
@@ -799,25 +825,26 @@ def _stages_5_to_8_static_image(
             stage_name="thumbnail",
             config=config,
         )
-        contrast_check = checks.check_contrast_ratio(
-            thumb_path, config.thumbnail_min_contrast
-        )
-        quality_results["thumbnail_contrast"] = contrast_check
-        if not contrast_check.passed:
-            logger.warning(f"Thumbnail contrast warning: {contrast_check.message}")
-            logger.info("Regenerating thumbnail for better contrast...")
-            thumb_path = _retry_on_error(
-                fn=lambda: thumbnail.generate_thumbnail(
-                    title, topic, output_dir, config, client
-                ),
-                stage_name="thumbnail_retry",
-                config=config,
-            )
+        if not config.skip_quality_checks:
             contrast_check = checks.check_contrast_ratio(
                 thumb_path, config.thumbnail_min_contrast
             )
-            quality_results["thumbnail_contrast_retry"] = contrast_check
-        logger.info(f"Thumbnail: contrast ratio {contrast_check.message}")
+            quality_results["thumbnail_contrast"] = contrast_check
+            if not contrast_check.passed:
+                logger.warning(f"Thumbnail contrast warning: {contrast_check.message}")
+                logger.info("Regenerating thumbnail for better contrast...")
+                thumb_path = _retry_on_error(
+                    fn=lambda: thumbnail.generate_thumbnail(
+                        title, topic, output_dir, config, client
+                    ),
+                    stage_name="thumbnail_retry",
+                    config=config,
+                )
+                contrast_check = checks.check_contrast_ratio(
+                    thumb_path, config.thumbnail_min_contrast
+                )
+                quality_results["thumbnail_contrast_retry"] = contrast_check
+            logger.info(f"Thumbnail: contrast ratio {contrast_check.message}")
         ckpt.mark_done("thumbnail")
 
     # Stage 8: Static image video assembly
@@ -904,25 +931,26 @@ def _stages_5_to_8_stock_footage(
             stage_name="thumbnail",
             config=config,
         )
-        contrast_check = checks.check_contrast_ratio(
-            thumb_path, config.thumbnail_min_contrast
-        )
-        quality_results["thumbnail_contrast"] = contrast_check
-        if not contrast_check.passed:
-            logger.warning(f"Thumbnail contrast warning: {contrast_check.message}")
-            logger.info("Regenerating thumbnail for better contrast...")
-            thumb_path = _retry_on_error(
-                fn=lambda: thumbnail.generate_thumbnail(
-                    title, topic, output_dir, config, client
-                ),
-                stage_name="thumbnail_retry",
-                config=config,
-            )
+        if not config.skip_quality_checks:
             contrast_check = checks.check_contrast_ratio(
                 thumb_path, config.thumbnail_min_contrast
             )
-            quality_results["thumbnail_contrast_retry"] = contrast_check
-        logger.info(f"Thumbnail: contrast ratio {contrast_check.message}")
+            quality_results["thumbnail_contrast"] = contrast_check
+            if not contrast_check.passed:
+                logger.warning(f"Thumbnail contrast warning: {contrast_check.message}")
+                logger.info("Regenerating thumbnail for better contrast...")
+                thumb_path = _retry_on_error(
+                    fn=lambda: thumbnail.generate_thumbnail(
+                        title, topic, output_dir, config, client
+                    ),
+                    stage_name="thumbnail_retry",
+                    config=config,
+                )
+                contrast_check = checks.check_contrast_ratio(
+                    thumb_path, config.thumbnail_min_contrast
+                )
+                quality_results["thumbnail_contrast_retry"] = contrast_check
+            logger.info(f"Thumbnail: contrast ratio {contrast_check.message}")
         ckpt.mark_done("thumbnail")
 
     # Stage 8: Stock footage video assembly

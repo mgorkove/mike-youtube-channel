@@ -1,5 +1,6 @@
 video_count: 5
 video_mode: "static_image"
+skip_quality_checks: true
 background_image: "assets/background.png"
 shorts_background_image: "assets/background_shorts.png"
 
