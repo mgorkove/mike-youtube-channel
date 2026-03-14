@@ -179,6 +179,7 @@ def run(config: Config) -> list[VideoResult]:
             video_count=len(topics),
             timezone=config.publish_timezone,
             publish_times=config.publish_times,
+            same_day=config.schedule_same_day,
         )
         for i, dt in enumerate(schedule):
             logger.info(f"  Video {i + 1} scheduled for: {dt}")
@@ -530,7 +531,9 @@ def _process_single_video(
     # --- Stage 8b: YouTube Short (stock_footage mode only) ---
     short_path = output_dir / "short.mp4"
     srt_path = output_dir / "subtitles.srt"
-    if config.video_mode in ("stock_footage", "static_image") and srt_path.exists():
+    if config.skip_shorts:
+        short_path = None
+    elif config.video_mode in ("stock_footage", "static_image") and srt_path.exists():
         if ckpt.is_done("short") and short_path.exists():
             logger.info("Stage 8b: Loaded cached Short")
         else:
