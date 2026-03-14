@@ -227,30 +227,51 @@ def generate_thumbnail(
         f"Video Topic: {topic}"
     )
 
-    prompt_response = client.models.generate_content(
-        model=config.text_model_name,
-        contents=strategist_input,
-        config=types.GenerateContentConfig(
-            temperature=0.9,
-            max_output_tokens=1024,
-        ),
-    )
-    raw_output = prompt_response.text.strip()
-
-    # Strip markdown code fences if present
-    if raw_output.startswith("```"):
-        raw_output = raw_output.split("\n", 1)[1]
-        if raw_output.endswith("```"):
-            raw_output = raw_output[: raw_output.rfind("```")]
-        raw_output = raw_output.strip()
-
-    # Parse EXACT_TEXT and image prompt
+    max_attempts = 3
     overlay_text = ""
-    image_prompt = raw_output
-    if raw_output.startswith("EXACT_TEXT:"):
-        parts = raw_output.split("\n", 1)
-        overlay_text = parts[0].replace("EXACT_TEXT:", "").strip()
-        image_prompt = parts[1].strip() if len(parts) > 1 else raw_output
+    image_prompt = ""
+
+    for attempt in range(1, max_attempts + 1):
+        prompt_response = client.models.generate_content(
+            model=config.text_model_name,
+            contents=strategist_input,
+            config=types.GenerateContentConfig(
+                temperature=0.9,
+                max_output_tokens=4096,
+            ),
+        )
+        raw_output = prompt_response.text.strip()
+
+        # Strip markdown code fences if present
+        if raw_output.startswith("```"):
+            raw_output = raw_output.split("\n", 1)[1]
+            if raw_output.endswith("```"):
+                raw_output = raw_output[: raw_output.rfind("```")]
+            raw_output = raw_output.strip()
+
+        # Parse EXACT_TEXT and image prompt
+        image_prompt = raw_output
+        if raw_output.startswith("EXACT_TEXT:"):
+            parts = raw_output.split("\n", 1)
+            overlay_text = parts[0].replace("EXACT_TEXT:", "").strip()
+            image_prompt = parts[1].strip() if len(parts) > 1 else raw_output
+
+        # Check if overlay text looks truncated (doesn't end with sentence-
+        # ending punctuation).  Retry if so.
+        if overlay_text and overlay_text.rstrip()[-1] in ".!?'\"…":
+            break
+        if attempt < max_attempts:
+            logger.warning(
+                f"Thumbnail text appears truncated (attempt {attempt}/{max_attempts}), "
+                f"retrying... Last chars: ...{overlay_text[-30:]!r}"
+            )
+            overlay_text = ""
+        else:
+            logger.warning(
+                f"Thumbnail text still truncated after {max_attempts} attempts, "
+                f"using best result"
+            )
+
     logger.info(f"Overlay text: {overlay_text}")
 
     # Use fixed image prompt from config if set (overrides LLM-generated prompt)
