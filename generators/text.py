@@ -244,6 +244,8 @@ Return ONLY the title text, nothing else. No quotes, no explanation."""
     )
     title = response.text.strip().strip('"').strip("'")
     title = _fix_title_grammar(title)
+    if len(title) > 100:
+        title = title[:97] + "..."
     return title
 
 
