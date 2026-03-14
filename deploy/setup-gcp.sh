@@ -126,7 +126,7 @@ else
         --service-account="$SA_EMAIL" \
         --scopes="cloud-platform" \
         --metadata-from-file="startup-script=deploy/startup.sh" \
-        --metadata="channel=heartbreak_chronicles" \
+        --metadata="channel=revenge_stories" \
         --no-address \
         --tags="video-pipeline" \
         --quiet
@@ -143,7 +143,7 @@ else
     gcloud compute instances add-metadata "$VM_NAME" \
         --zone="$ZONE" \
         --project="$PROJECT" \
-        --metadata="channel=heartbreak_chronicles" \
+        --metadata="channel=revenge_stories" \
         --quiet
 fi
 
@@ -159,24 +159,25 @@ for POLICY in pipeline-start pipeline-stop; do
         --region="$REGION" --project="$PROJECT" --quiet 2>/dev/null || true
 done
 
-# Start schedule: Sun-Thu at 6:00 AM ET (11:00 UTC)
-# Sunday = full pipeline (generate + upload batch)
-# Mon-Thu = upload pending videos (~15 min each)
+# Start schedule: every day at 5:00 AM ET (10:00 UTC)
+# The startup script determines what to run based on channel + day of week.
+# The VM shuts itself down after each run (see startup.sh).
 gcloud compute resource-policies create instance-schedule "pipeline-start" \
     --project="$PROJECT" \
     --region="$REGION" \
-    --vm-start-schedule="0 11 * * 0-4" \
+    --vm-start-schedule="0 10 * * *" \
     --timezone="UTC" \
-    --description="Start video pipeline VM Sun-Thu at 6am ET" \
+    --description="Start video pipeline VM daily at 5am ET" \
     2>/dev/null || echo "  pipeline-start schedule already exists"
 
-# Stop schedule: Friday 2:00 AM ET (7:00 UTC) — safety net
+# Safety-net stop: every day at 11:00 PM ET (4:00 UTC next day)
+# Kills the VM if it's still running after 18 hours (should never happen).
 gcloud compute resource-policies create instance-schedule "pipeline-stop" \
     --project="$PROJECT" \
     --region="$REGION" \
-    --vm-stop-schedule="0 7 * * 5" \
+    --vm-stop-schedule="0 4 * * *" \
     --timezone="UTC" \
-    --description="Safety net: stop VM Friday 2am ET if still running" \
+    --description="Safety net: stop VM daily at 11pm ET if still running" \
     2>/dev/null || echo "  pipeline-stop schedule already exists"
 
 # Attach schedules to VM
@@ -192,11 +193,11 @@ echo ""
 echo "=== Setup complete! ==="
 echo ""
 echo "The VM will automatically:"
-echo "  - Sunday 6am ET: Generate 21 videos, upload first ~5 (API quota limit)"
-echo "  - Mon-Thu 6am ET: Upload next batch of ~5 pending videos"
-echo "  - Videos scheduled 3/day Mon-Sun at 8am, 2pm & 8pm ET"
+echo "  - Start daily at 5am ET"
+echo "  - Run the full pipeline for the configured channel"
+echo "  - Shut itself down after each run (~30-90 min)"
+echo "  - Safety-net stop at 11pm ET if still running"
 echo "  - Send email notification after each run"
-echo "  - Shut itself down after each run (~\$0.10/weekday run)"
 echo ""
 echo "To switch channels, update the VM metadata:"
 echo "  gcloud compute instances add-metadata $VM_NAME --zone=$ZONE --project=$PROJECT --metadata=channel=<CHANNEL>"
@@ -207,4 +208,4 @@ echo ""
 echo "To watch logs:"
 echo "  gcloud compute ssh $VM_NAME --zone=$ZONE --project=$PROJECT -- tail -f /var/log/video-pipeline.log"
 echo ""
-echo "Estimated cost: ~\$6/run (on-demand) + ~\$10/month disk"
+echo "Estimated cost: ~\$1-3/day (on-demand, auto-shutdown) + ~\$10/month disk"
