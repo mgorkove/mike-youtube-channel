@@ -113,7 +113,13 @@ echo ""
 # ---------- 4. Create VM ----------
 echo "4. Creating GCE VM..."
 if gcloud compute instances describe "$VM_NAME" --zone="$ZONE" --project="$PROJECT" &>/dev/null; then
-    echo "  VM already exists (skipping creation)"
+    # Update channel metadata on existing VM
+    echo "  VM already exists — updating channel metadata to revenge_stories..."
+    gcloud compute instances add-metadata "$VM_NAME" \
+        --zone="$ZONE" \
+        --project="$PROJECT" \
+        --metadata="channel=revenge_stories" \
+        --quiet
 else
     gcloud compute instances create "$VM_NAME" \
         --project="$PROJECT" \
@@ -137,14 +143,6 @@ else
     echo "  Stopping VM (will be started by scheduler)..."
     gcloud compute instances stop "$VM_NAME" \
         --zone="$ZONE" --project="$PROJECT" --quiet
-else
-    # Update channel metadata on existing VM
-    echo "  Setting channel metadata to heartbreak_chronicles..."
-    gcloud compute instances add-metadata "$VM_NAME" \
-        --zone="$ZONE" \
-        --project="$PROJECT" \
-        --metadata="channel=revenge_stories" \
-        --quiet
 fi
 
 # ---------- 5. Create Instance Schedule ----------
