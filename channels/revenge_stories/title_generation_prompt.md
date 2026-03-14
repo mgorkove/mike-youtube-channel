@@ -16,8 +16,12 @@ Part 1 — A vivid first-person setup with a specific detail:
 - Include a concrete, specific detail that makes it feel REAL: a number, a place, a time, an object
 - Examples of good setups: "I Took My Late Wife's Device For Repair", "My Son Vanished For 6 Years", "I Inherited a Run-Down Farm While My Son Got a $5M Penthouse"
 
-Part 2 — A suspenseful cliffhanger that does NOT reveal the outcome:
-- Use embedded dialogue in double quotes from another character: "You Shouldn't Let Anyone See This", "That Coffin Is Empty. Go to Room 24 Now.", "Get In. I'll Take You to Her."
+Part 2 — A suspenseful cliffhanger that OPENS a mystery (never closes it):
+- The dialogue or reaction must be VAGUE and CRYPTIC — it should raise a NEW question, not answer the setup
+- GOOD (cryptic, creates mystery): "You Shouldn't Let Anyone See This" — what is "this"?? / "That Coffin Is Empty. Go to Room 24 Now." — what's in room 24?? / "Get In. I'll Take You to Her." — where is she??
+- BAD (too specific, reveals the story): "Your Children Already Signed The Deed" — mystery solved, no reason to click / "The Trust Fund Will Be Empty By Monday" — the scheme is already explained
+- The best cliffhangers use words like "this", "something", "what", "her", "there" — vague pronouns that point to an unknown
+- Unexpected characters deliver the most compelling dialogue: a gravedigger, a technician, a stranger, a security guard — NOT lawyers or family members explaining what happened
 - OR use an emotional reaction that teases without resolving: "I Was Horrified", "What She Said Next...", "Then Begged the Next Day"
 - OR cut off mid-action so the viewer MUST click: "Next Morning, Police", "But When I Opened the Door..."
 
@@ -50,6 +54,7 @@ WHAT MAKES THESE TITLES WORK:
 - The cliffhanger creates an "information gap" — you MUST know what happens
 - Embedded quotes from other characters add drama and mystery
 - The emotional tone is curiosity and dread, not rage and revenge
+- CRITICAL: The title makes the viewer ask "WHAT did they find? WHAT happened?" — if the title already answers that question, it FAILS. The viewer should feel like they're missing one crucial piece of information.
 
 LENGTH: Target 80-110 characters. These titles are longer than typical clickbait because they're mini-stories.
 

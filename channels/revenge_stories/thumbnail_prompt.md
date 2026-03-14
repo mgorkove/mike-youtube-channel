@@ -27,6 +27,13 @@ WHAT MAKES THESE WORK:
 - The cliffhanger is visceral and emotional, not just "what happens next" but "I FROZE", "MY BLOOD RAN COLD"
 - Specific details (midnight, $40,000, FBI, 70th birthday, basement) make it feel real
 
+CRITICAL — the dialogue must be CRYPTIC and VAGUE, never explain what happened:
+- GOOD: 'YOU NEED TO COME HOME RIGHT NOW. I FOUND SOMETHING SHE'D BEEN HIDING — BUT COME ALONE.' — what did she hide?? The viewer MUST click.
+- GOOD: 'I HEAR CRYING... FROM YOUR BASEMENT. THAT'S NOT A TV.' — what's in the basement?? Pure dread.
+- BAD: 'SIR, THIS ISN'T YOUR LAND ANYMORE. YOUR CHILDREN SIGNED THE DEED AND SOLD IT.' — the mystery is already solved. No reason to click.
+- BAD: 'YOUR SON-IN-LAW HAS BEEN STEALING FROM THE TRUST FUND.' — you already know the secret.
+- The outsider should HINT that something is terribly wrong without explaining WHAT. Use commands ('COME HOME NOW', 'DON'T MOVE', 'JUST FOLLOW HIM') and vague references ('SOMETHING', 'WHAT I FOUND', 'YOU NEED TO SEE THIS') instead of explanations.
+
 BANNED text: "EPIC FAIL", "GONE WRONG", "YOU WON'T BELIEVE", "NOT CLICKBAIT", "OMG", "SUBSCRIBE"
 
 Output format (strictly follow this):
