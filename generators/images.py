@@ -59,6 +59,10 @@ def _generate_single_image(
         contents = [full_prompt]
     img_path = images_dir / f"{index + 1:03d}.png"
 
+    if img_path.exists():
+        logger.info(f"Skipping existing image {index + 1}/{total}: {img_path}")
+        return img_path
+
     for attempt in range(PER_IMAGE_RETRIES):
         try:
             response = client.models.generate_content(
