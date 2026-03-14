@@ -87,6 +87,26 @@ def _create_bokeh_background(width: int, height: int) -> Image.Image:
     return img.convert("RGB")
 
 
+def _word_wrap(text: str, font, max_width: int, draw: ImageDraw.Draw,
+               stroke_width: int) -> list[str]:
+    """Break text into lines that fit within max_width at the given font size."""
+    words = text.split()
+    if not words:
+        return [text]
+    lines = []
+    current = words[0]
+    for word in words[1:]:
+        test = current + " " + word
+        bbox = draw.textbbox((0, 0), test, font=font, stroke_width=stroke_width)
+        if bbox[2] - bbox[0] <= max_width:
+            current = test
+        else:
+            lines.append(current)
+            current = word
+    lines.append(current)
+    return lines
+
+
 def _overlay_text(
     img: Image.Image,
     overlay_text: str,
@@ -94,11 +114,12 @@ def _overlay_text(
 ) -> Image.Image:
     """Render multi-line overlay text onto the left side of a thumbnail.
 
-    Text lines are separated by " / " in the overlay_text string.
-    First 2 lines and last 1-2 lines are orange; middle lines are white.
+    Text segments are separated by " / " in the overlay_text string.
+    Long segments are word-wrapped to fill the available width.
+    First 2 and last 2 wrapped lines are orange; middle lines are white.
     """
-    lines = [line.strip() for line in overlay_text.split("/")]
-    if not lines:
+    segments = [seg.strip() for seg in overlay_text.split("/")]
+    if not segments:
         return img
 
     img = img.copy()
@@ -112,12 +133,12 @@ def _overlay_text(
     margin_bottom = int(height * 0.04)
     available_height = height - margin_top - margin_bottom
 
-    # Find the largest font size that fits all lines in the available area.
-    # Account for stroke outline (adds to rendered size beyond textbbox).
+    # Find the largest font size where all word-wrapped lines fit.
     font_size = 200
     min_font_size = 24
-
     font = None
+    wrapped_lines = []
+
     while font_size >= min_font_size:
         try:
             font = ImageFont.truetype(font_path, font_size)
@@ -127,54 +148,47 @@ def _overlay_text(
             break
 
         stroke = max(4, font_size // 10)
-        total_height = 0
-        fits = True
-        for line in lines:
-            bbox = draw.textbbox(
-                (0, 0), line, font=font, stroke_width=stroke,
-            )
-            line_w = bbox[2] - bbox[0]
-            line_h = bbox[3] - bbox[1]
-            total_height += line_h
-            if line_w > text_area_width:
-                fits = False
-                break
+        wrapped_lines = []
+        for seg in segments:
+            wrapped_lines.extend(_word_wrap(seg, font, text_area_width, draw, stroke))
 
-        if fits and total_height <= available_height:
+        total_height = 0
+        for line in wrapped_lines:
+            bbox = draw.textbbox((0, 0), line, font=font, stroke_width=stroke)
+            total_height += bbox[3] - bbox[1]
+
+        if total_height <= available_height:
             break
         font_size -= 2
 
     if font is None:
         font = ImageFont.load_default()
 
-    # Calculate line heights (including stroke) and spread to fill height
-    # Thicker stroke = better readability at small thumbnail display sizes
+    # Calculate line heights
     outline_width = max(4, font_size // 10)
     line_heights = []
-    for line in lines:
-        bbox = draw.textbbox(
-            (0, 0), line, font=font, stroke_width=outline_width,
-        )
+    for line in wrapped_lines:
+        bbox = draw.textbbox((0, 0), line, font=font, stroke_width=outline_width)
         line_heights.append(bbox[3] - bbox[1])
     total_text_height = sum(line_heights)
 
     # Distribute extra vertical space between lines, capped to avoid
     # excessive gaps when there are only a few lines.
     max_gap = int(font_size * 0.25)
-    if len(lines) > 1:
+    num_lines = len(wrapped_lines)
+    if num_lines > 1:
         line_gap = min(
-            (available_height - total_text_height) / (len(lines) - 1),
+            (available_height - total_text_height) / (num_lines - 1),
             max_gap,
         )
     else:
         line_gap = 0
 
     # Center the block vertically if gap was capped
-    used_height = total_text_height + int(line_gap) * max(len(lines) - 1, 0)
+    used_height = total_text_height + int(line_gap) * max(num_lines - 1, 0)
     y_start = margin_top + (available_height - used_height) // 2
 
     # Color assignment: first 2 = orange, last 2 = orange, rest = white
-    num_lines = len(lines)
     line_colors = []
     for i in range(num_lines):
         if i < 2 or i >= num_lines - 2:
@@ -184,7 +198,7 @@ def _overlay_text(
 
     # Draw each line with black outline
     y = y_start
-    for line, color, lh in zip(lines, line_colors, line_heights):
+    for line, color, lh in zip(wrapped_lines, line_colors, line_heights):
         draw.text(
             (margin_left, y), line, font=font, fill=color,
             stroke_width=outline_width, stroke_fill=COLOR_BLACK,
