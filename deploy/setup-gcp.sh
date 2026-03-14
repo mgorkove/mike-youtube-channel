@@ -146,10 +146,12 @@ else
 fi
 
 # ---------- 5. Create Instance Schedule ----------
-echo "5. Creating instance schedules..."
+echo "5. Creating instance schedule..."
 
-# Remove old schedules if attached (safe to fail if they don't exist)
-for POLICY in pipeline-start pipeline-stop; do
+SCHEDULE_NAME="pipeline-schedule"
+
+# Remove old schedule if attached (safe to fail if it doesn't exist)
+for POLICY in "$SCHEDULE_NAME" pipeline-start pipeline-stop; do
     gcloud compute instances remove-resource-policies "$VM_NAME" \
         --zone="$ZONE" --project="$PROJECT" \
         --resource-policies="$POLICY" 2>/dev/null || true
@@ -157,35 +159,24 @@ for POLICY in pipeline-start pipeline-stop; do
         --region="$REGION" --project="$PROJECT" --quiet 2>/dev/null || true
 done
 
-# Start schedule: every day at 5:00 AM ET (10:00 UTC)
-# The startup script determines what to run based on channel + day of week.
-# The VM shuts itself down after each run (see startup.sh).
-gcloud compute resource-policies create instance-schedule "pipeline-start" \
+# GCE only allows one schedule policy per VM, so combine start + stop.
+# Start: every day at 5:00 AM ET (10:00 UTC) — runs the pipeline.
+# Stop:  every day at 11:00 PM ET (4:00 UTC) — safety net in case of hangs.
+# The VM also shuts itself down after each run (see startup.sh).
+gcloud compute resource-policies create instance-schedule "$SCHEDULE_NAME" \
     --project="$PROJECT" \
     --region="$REGION" \
     --vm-start-schedule="0 10 * * *" \
-    --timezone="UTC" \
-    --description="Start video pipeline VM daily at 5am ET" \
-    2>/dev/null || echo "  pipeline-start schedule already exists"
-
-# Safety-net stop: every day at 11:00 PM ET (4:00 UTC next day)
-# Kills the VM if it's still running after 18 hours (should never happen).
-gcloud compute resource-policies create instance-schedule "pipeline-stop" \
-    --project="$PROJECT" \
-    --region="$REGION" \
     --vm-stop-schedule="0 4 * * *" \
     --timezone="UTC" \
-    --description="Safety net: stop VM daily at 11pm ET if still running" \
-    2>/dev/null || echo "  pipeline-stop schedule already exists"
+    --description="Daily: start at 5am ET, safety-stop at 11pm ET" \
+    2>/dev/null || echo "  $SCHEDULE_NAME schedule already exists"
 
-# Attach schedules to VM
-for POLICY in pipeline-start pipeline-stop; do
-    gcloud compute instances add-resource-policies "$VM_NAME" \
-        --zone="$ZONE" \
-        --project="$PROJECT" \
-        --resource-policies="$POLICY" \
-        2>/dev/null || echo "  $POLICY already attached"
-done
+gcloud compute instances add-resource-policies "$VM_NAME" \
+    --zone="$ZONE" \
+    --project="$PROJECT" \
+    --resource-policies="$SCHEDULE_NAME" \
+    2>/dev/null || echo "  $SCHEDULE_NAME already attached"
 
 echo ""
 echo "=== Setup complete! ==="
