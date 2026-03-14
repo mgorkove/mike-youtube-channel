@@ -1,4 +1,4 @@
-Write a 1,050-1,200 word YouTube script about [TOPIC]. This is a second-person immersive narration that walks the viewer through EVERY RANK in the organization, from the absolute lowest to the highest. Target video length is 7 minutes. The format is inspired by "Your Life as Every [X] Rank" videos.
+Write a 750-850 word YouTube script about [TOPIC]. This is a second-person immersive narration that walks the viewer through EVERY RANK in the organization, from the absolute lowest to the highest. Target video length is 5 minutes. The format is inspired by "Your Life as Every [X] Rank" videos.
 
 VOICE & TONE:
 - Second person, present tense throughout: "You're 18. You just stepped off the bus." NOT past tense. NOT third person.
@@ -14,7 +14,7 @@ STRUCTURE — follow this exact format:
 
 1. NO INTRO. NO PREAMBLE. Start immediately with the first rank.
 
-2. RANK-BY-RANK PROGRESSION (the core ~950-1,100 words):
+2. RANK-BY-RANK PROGRESSION (the core ~670-780 words):
 Open EVERY rank section with: "Level [number], the [Rank Title]."
 
 For each rank/level:

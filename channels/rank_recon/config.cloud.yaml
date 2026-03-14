@@ -25,8 +25,8 @@ channel:
     for storytelling purposes. Viewer discretion is advised.
 
 script:
-  min_words: 1500
-  max_words: 1800
+  min_words: 750
+  max_words: 850
   banned_phrases:
     - "subscribe to my channel"
     - "like and subscribe"
