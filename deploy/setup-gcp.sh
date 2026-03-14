@@ -100,6 +100,11 @@ create_secret "YOUTUBE_CLIENT_ID_RANKS" "YouTube OAuth Client ID (rank_recon)"
 create_secret "YOUTUBE_CLIENT_SECRET_RANKS" "YouTube OAuth Client Secret (rank_recon)"
 create_secret "YOUTUBE_REFRESH_TOKEN_RANKS" "YouTube OAuth Refresh Token (rank_recon)"
 
+# revenge_stories YouTube credentials
+create_secret "YOUTUBE_CLIENT_ID_REVENGE" "YouTube OAuth Client ID (revenge_stories)"
+create_secret "YOUTUBE_CLIENT_SECRET_REVENGE" "YouTube OAuth Client Secret (revenge_stories)"
+create_secret "YOUTUBE_REFRESH_TOKEN_REVENGE" "YouTube OAuth Refresh Token (revenge_stories)"
+
 echo ""
 echo "   Tip: Run 'python extract_youtube_creds.py' locally to get"
 echo "   YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, and YOUTUBE_REFRESH_TOKEN."

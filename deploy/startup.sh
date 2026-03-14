@@ -82,6 +82,12 @@ YOUTUBE_CLIENT_ID=$(fetch_secret "YOUTUBE_CLIENT_ID_RANKS")
 YOUTUBE_CLIENT_SECRET=$(fetch_secret "YOUTUBE_CLIENT_SECRET_RANKS")
 YOUTUBE_REFRESH_TOKEN=$(fetch_secret "YOUTUBE_REFRESH_TOKEN_RANKS")
 EOF
+elif [ "$CHANNEL" = "revenge_stories" ]; then
+    cat >> "$APP_DIR/.env" <<EOF
+YOUTUBE_CLIENT_ID=$(fetch_secret "YOUTUBE_CLIENT_ID_REVENGE")
+YOUTUBE_CLIENT_SECRET=$(fetch_secret "YOUTUBE_CLIENT_SECRET_REVENGE")
+YOUTUBE_REFRESH_TOKEN=$(fetch_secret "YOUTUBE_REFRESH_TOKEN_REVENGE")
+EOF
 fi
 
 chmod 600 "$APP_DIR/.env"
@@ -91,13 +97,14 @@ echo "Building Docker image..."
 docker build -t video-pipeline "$APP_DIR"
 
 # ---------- Run pipeline ----------
-# Sunday: full pipeline (generate + upload first batch within quota)
-# Mon-Thu: upload pending videos from previous generation run
+# Channels with schedule_same_day (e.g. revenge_stories) always run the full
+# pipeline since all videos are generated and uploaded in a single run.
+# Other channels: Sunday = full pipeline, Mon-Thu = upload pending.
 DAY_OF_WEEK=$(date +%u)  # 1=Monday ... 7=Sunday
 
 PIPELINE_EXIT=0
-if [ "$DAY_OF_WEEK" = "7" ]; then
-    echo "Sunday: Full pipeline run (generate + upload) for $CHANNEL..."
+if [ "$CHANNEL" = "revenge_stories" ] || [ "$DAY_OF_WEEK" = "7" ]; then
+    echo "Full pipeline run (generate + upload) for $CHANNEL..."
     docker run --rm \
         --env-file "$APP_DIR/.env" \
         -v "$APP_DIR/output:/app/output" \
