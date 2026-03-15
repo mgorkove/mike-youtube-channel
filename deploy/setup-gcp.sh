@@ -133,7 +133,6 @@ else
         --scopes="cloud-platform" \
         --metadata-from-file="startup-script=deploy/startup.sh" \
         --metadata="channel=revenge_stories" \
-        --no-address \
         --tags="video-pipeline" \
         --quiet
 
