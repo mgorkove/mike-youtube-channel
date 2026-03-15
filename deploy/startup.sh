@@ -103,7 +103,7 @@ docker build -t video-pipeline "$APP_DIR"
 DAY_OF_WEEK=$(date +%u)  # 1=Monday ... 7=Sunday
 
 PIPELINE_EXIT=0
-if [ "$CHANNEL" = "revenge_stories" ] || [ "$DAY_OF_WEEK" = "7" ]; then
+if [ "$CHANNEL" = "revenge_stories" ] || [ "$CHANNEL" = "heartbreak_chronicles" ] || [ "$DAY_OF_WEEK" = "7" ]; then
     echo "Full pipeline run (generate + upload) for $CHANNEL..."
     docker run --rm \
         --env-file "$APP_DIR/.env" \

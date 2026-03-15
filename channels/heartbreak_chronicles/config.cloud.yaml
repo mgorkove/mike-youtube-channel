@@ -1,5 +1,8 @@
-video_count: 21
+video_count: 6
 video_mode: "static_image"
+skip_quality_checks: true
+skip_shorts: true
+schedule_same_day: true
 background_image: "assets/background.png"
 
 channel:
@@ -89,11 +92,14 @@ retry:
 scheduling:
   timezone: "America/New_York"
   publish_times:
-    - [8, 0]    # 8:00 AM ET
-    - [14, 0]   # 2:00 PM ET
-    - [20, 0]   # 8:00 PM ET
+    - [6, 0]    # 6:00 AM ET
+    - [9, 0]    # 9:00 AM ET
+    - [12, 0]   # 12:00 PM ET
+    - [15, 0]   # 3:00 PM ET
+    - [18, 0]   # 6:00 PM ET
+    - [21, 0]   # 9:00 PM ET
 
-max_parallel_videos: 14
+max_parallel_videos: 6
 render_workers: 20
 cleanup_after_upload: true
 
