@@ -167,8 +167,14 @@ Return ONLY a JSON array of topic strings, nothing else."""
     # If the LLM returned fewer topics than requested (common with malformed
     # JSON where some strings can't be extracted), generate the remaining ones
     # individually rather than failing the whole pipeline.
+    max_extra_attempts = count * 3
+    extra_attempts = 0
     while len(topics) < count:
-        logger.warning(f"Only got {len(topics)}/{count} topics, generating 1 more...")
+        if extra_attempts >= max_extra_attempts:
+            logger.error(f"Gave up after {max_extra_attempts} attempts to fill {count} topics (got {len(topics)})")
+            break
+        extra_attempts += 1
+        logger.warning(f"Only got {len(topics)}/{count} topics, generating 1 more (attempt {extra_attempts}/{max_extra_attempts})...")
         extra_resp = client.models.generate_content(
             model=config.text_model_name,
             contents=(
