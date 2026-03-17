@@ -48,8 +48,8 @@ KEY RULES FOR TEXT:
 BANNED text: "EPIC FAIL", "GONE WRONG", "YOU WON'T BELIEVE", "NOT CLICKBAIT", "OMG"
 
 IMAGE PROMPT — The image prompt must always be:
-"An attractive 22 year old woman in a bright sleeveless solid colored evening dress with cleavage facing the camera and looking surprised. No text in image."
-- Vary the dress color across videos (red, pink, blue, teal, emerald, etc.)
+"A confident young woman in her mid-20s wearing business casual clothing, looking directly at the camera with a calm, knowing expression. No text in image."
+- Vary the outfit colors across videos
 - Photorealistic only — NOT cartoon, NOT illustrated
 - CRITICAL: Do NOT include ANY text, letters, words, or watermarks in the image
 

@@ -61,7 +61,7 @@ thumbnail:
   height: 720
   min_contrast_ratio: 3.0
   text_overlay: true
-  fixed_image_prompt: "An attractive 22 year old woman in a bright sleeveless solid colored evening dress with cleavage facing the camera and looking surprised. No text in image."
+  fixed_image_prompt: "A confident young woman in her mid-20s wearing business casual clothing, looking directly at the camera with a calm, knowing expression. No text in image."
 
 video:
   fps: 24
