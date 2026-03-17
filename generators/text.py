@@ -46,6 +46,55 @@ def _fix_title_grammar(title: str) -> str:
     return _MADE_HER_PATTERN.sub(_replace, title)
 
 
+# Patterns that indicate the model leaked its reasoning/drafting process
+# instead of returning just the title.
+_REASONING_PREFIX = re.compile(
+    r"^(?:"
+    r"Draft\s*\d+[^:]*:|"            # "Draft 8 (notes):"
+    r"(?:If|Let me|I (?:need|should|want|think|will))\b[^—\"]*[.!]\s*|"  # "If I use X, I'm revealing... "
+    r"Here(?:'s| is)[^:]*:\s*|"       # "Here's the title:"
+    r"Title:\s*|"                      # "Title: ..."
+    r"Final (?:title|version)[^:]*:\s*"  # "Final title:"
+    r")",
+    re.IGNORECASE,
+)
+
+
+def _clean_title(raw: str) -> str:
+    """Extract the actual title from model output, stripping reasoning."""
+    text = raw.strip()
+
+    # Strip markdown code fences
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1]
+        if text.endswith("```"):
+            text = text[: text.rfind("```")]
+        text = text.strip()
+
+    # If multi-line, the model likely included reasoning.  Take the last
+    # non-empty line that looks like a title (starts with a quote, "I ", "My ",
+    # or an uppercase word).
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    if len(lines) > 1:
+        for line in reversed(lines):
+            cleaned = line.strip().strip('"').strip("'").strip("*")
+            # Looks like a real title if it starts with common story openers
+            if re.match(r'^(?:[""\']|I |My |At |The |Her |His |We |He |She |")', cleaned):
+                text = cleaned
+                break
+        else:
+            # Fallback: use last line
+            text = lines[-1]
+
+    # Strip known reasoning prefixes
+    text = _REASONING_PREFIX.sub("", text).strip()
+
+    # Remove surrounding quotes, asterisks
+    text = text.strip('"').strip("'").strip("*").strip('"').strip("'")
+
+    return text
+
+
 def _extract_json_array(text: str) -> list:
     """Robustly extract a JSON array from LLM output.
 
@@ -248,7 +297,7 @@ Return ONLY the title text, nothing else. No quotes, no explanation."""
             max_output_tokens=1024,
         ),
     )
-    title = response.text.strip().strip('"').strip("'")
+    title = _clean_title(response.text)
     title = _fix_title_grammar(title)
     if len(title) > 100:
         title = title[:97] + "..."
