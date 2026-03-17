@@ -28,6 +28,21 @@ logger = logging.getLogger(__name__)
 COLOR_ORANGE = (255, 165, 0)
 COLOR_WHITE = (255, 255, 255)
 COLOR_BLACK = (0, 0, 0)
+COLOR_YELLOW = (255, 215, 0)
+COLOR_PINK = (255, 105, 180)
+COLOR_RED = (255, 40, 40)
+
+# Map color names to RGB tuples (used by color-tagged overlay text)
+COLOR_MAP = {
+    "yellow": COLOR_YELLOW,
+    "pink": COLOR_PINK,
+    "white": COLOR_WHITE,
+    "red": COLOR_RED,
+    "orange": COLOR_ORANGE,
+}
+
+import re
+_COLOR_TAG_RE = re.compile(r"^\[([a-z+\s]+)\]\s*", re.IGNORECASE)
 
 # Portrait dimensions for the woman (narrow, will be pasted onto right side)
 PORTRAIT_WIDTH = 512
@@ -107,6 +122,59 @@ def _word_wrap(text: str, font, max_width: int, draw: ImageDraw.Draw,
     return lines
 
 
+def _parse_segment_colors(segment: str) -> tuple[str, list[tuple]]:
+    """Parse color tag from a segment like '[yellow+white]SOME TEXT'.
+
+    Returns (clean_text, [(color1, ...), (color2, ...)]).
+    If no tag found, returns (segment, []).
+    """
+    m = _COLOR_TAG_RE.match(segment)
+    if not m:
+        return segment, []
+
+    tag = m.group(1).lower().strip()
+    text = segment[m.end():]
+    colors = []
+    for name in tag.split("+"):
+        name = name.strip()
+        if name in COLOR_MAP:
+            colors.append(COLOR_MAP[name])
+    return text, colors
+
+
+def _draw_dual_color_line(
+    draw: ImageDraw.Draw,
+    x: int,
+    y: int,
+    text: str,
+    font,
+    color1: tuple,
+    color2: tuple,
+    outline_width: int,
+):
+    """Draw a single line where roughly the first half of words use color1
+    and the second half use color2."""
+    words = text.split()
+    if not words:
+        return
+    split = max(1, len(words) // 2)
+    part1 = " ".join(words[:split])
+    part2 = " ".join(words[split:])
+
+    # Draw first part
+    draw.text(
+        (x, y), part1, font=font, fill=color1,
+        stroke_width=outline_width, stroke_fill=COLOR_BLACK,
+    )
+    # Measure first part width to position second part
+    bbox1 = draw.textbbox((0, 0), part1 + " ", font=font, stroke_width=outline_width)
+    x2 = x + bbox1[2] - bbox1[0]
+    draw.text(
+        (x2, y), part2, font=font, fill=color2,
+        stroke_width=outline_width, stroke_fill=COLOR_BLACK,
+    )
+
+
 def _overlay_text(
     img: Image.Image,
     overlay_text: str,
@@ -116,11 +184,24 @@ def _overlay_text(
 
     Text segments are separated by " / " in the overlay_text string.
     Long segments are word-wrapped to fill the available width.
-    First 2 and last 2 wrapped lines are orange; middle lines are white.
+
+    Supports two coloring modes:
+    1. Color tags: segments prefixed with [yellow], [pink+white], etc.
+       Each segment's wrapped lines get the tagged color(s).
+    2. Legacy (no tags): first 2 and last 2 lines orange, middle white.
     """
     segments = [seg.strip() for seg in overlay_text.split("/")]
     if not segments:
         return img
+
+    # Parse color tags from each segment
+    parsed_segments = []  # list of (text, [colors])
+    has_color_tags = False
+    for seg in segments:
+        text, colors = _parse_segment_colors(seg)
+        if colors:
+            has_color_tags = True
+        parsed_segments.append((text, colors))
 
     img = img.copy()
     draw = ImageDraw.Draw(img)
@@ -137,7 +218,8 @@ def _overlay_text(
     font_size = 200
     min_font_size = 24
     font = None
-    wrapped_lines = []
+    # Each entry: (line_text, [colors_from_parent_segment])
+    wrapped_with_colors: list[tuple[str, list[tuple]]] = []
 
     while font_size >= min_font_size:
         try:
@@ -148,12 +230,13 @@ def _overlay_text(
             break
 
         stroke = max(4, font_size // 10)
-        wrapped_lines = []
-        for seg in segments:
-            wrapped_lines.extend(_word_wrap(seg, font, text_area_width, draw, stroke))
+        wrapped_with_colors = []
+        for text, colors in parsed_segments:
+            for wline in _word_wrap(text, font, text_area_width, draw, stroke):
+                wrapped_with_colors.append((wline, colors))
 
         total_height = 0
-        for line in wrapped_lines:
+        for line, _ in wrapped_with_colors:
             bbox = draw.textbbox((0, 0), line, font=font, stroke_width=stroke)
             total_height += bbox[3] - bbox[1]
 
@@ -167,15 +250,14 @@ def _overlay_text(
     # Calculate line heights
     outline_width = max(4, font_size // 10)
     line_heights = []
-    for line in wrapped_lines:
+    for line, _ in wrapped_with_colors:
         bbox = draw.textbbox((0, 0), line, font=font, stroke_width=outline_width)
         line_heights.append(bbox[3] - bbox[1])
     total_text_height = sum(line_heights)
 
-    # Distribute extra vertical space between lines, capped to avoid
-    # excessive gaps when there are only a few lines.
+    # Distribute extra vertical space between lines
     max_gap = int(font_size * 0.25)
-    num_lines = len(wrapped_lines)
+    num_lines = len(wrapped_with_colors)
     if num_lines > 1:
         line_gap = min(
             (available_height - total_text_height) / (num_lines - 1),
@@ -188,21 +270,38 @@ def _overlay_text(
     used_height = total_text_height + int(line_gap) * max(num_lines - 1, 0)
     y_start = margin_top + (available_height - used_height) // 2
 
-    # Color assignment: first 2 = orange, last 2 = orange, rest = white
-    line_colors = []
-    for i in range(num_lines):
-        if i < 2 or i >= num_lines - 2:
-            line_colors.append(COLOR_ORANGE)
-        else:
-            line_colors.append(COLOR_WHITE)
-
-    # Draw each line with black outline
+    # Draw each line
     y = y_start
-    for line, color, lh in zip(wrapped_lines, line_colors, line_heights):
-        draw.text(
-            (margin_left, y), line, font=font, fill=color,
-            stroke_width=outline_width, stroke_fill=COLOR_BLACK,
-        )
+    for i, ((line, colors), lh) in enumerate(zip(wrapped_with_colors, line_heights)):
+        if has_color_tags and colors:
+            if len(colors) == 1:
+                # Single color tag
+                draw.text(
+                    (margin_left, y), line, font=font, fill=colors[0],
+                    stroke_width=outline_width, stroke_fill=COLOR_BLACK,
+                )
+            else:
+                # Dual color: first half of words in color1, second half in color2
+                _draw_dual_color_line(
+                    draw, margin_left, y, line, font,
+                    colors[0], colors[1], outline_width,
+                )
+        elif has_color_tags:
+            # Segment had no tag — default to white
+            draw.text(
+                (margin_left, y), line, font=font, fill=COLOR_WHITE,
+                stroke_width=outline_width, stroke_fill=COLOR_BLACK,
+            )
+        else:
+            # Legacy mode: first 2 and last 2 lines orange, rest white
+            if i < 2 or i >= num_lines - 2:
+                color = COLOR_ORANGE
+            else:
+                color = COLOR_WHITE
+            draw.text(
+                (margin_left, y), line, font=font, fill=color,
+                stroke_width=outline_width, stroke_fill=COLOR_BLACK,
+            )
         y += lh + int(line_gap)
 
     return img

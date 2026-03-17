@@ -1,0 +1,110 @@
+video_count: 6
+video_mode: "static_image"
+skip_quality_checks: true
+skip_shorts: true
+schedule_same_day: true
+background_image: "assets/background.png"
+
+channel:
+  theme: >
+    This channel tells gripping first-person family revenge stories from the perspective
+    of a woman in her 20s standing up to toxic family members — parents, siblings, mothers,
+    fathers, stepparents, and extended family. Each video is a dramatic narrated story
+    of betrayal, favoritism, manipulation, and the moment she finally fights back.
+    Stories build tension through escalating mistreatment and culminate in a satisfying,
+    calculated act of justice. The tone is raw, empowering, and cathartic.
+  required_keywords:
+    - family revenge
+    - revenge stories
+    - family drama
+    - reddit stories
+    - parents
+    - betrayal
+  disclaimer: >
+    The stories presented on this channel are inspired by real-life experiences shared on
+    public platforms such as Reddit and other online forums. These narratives are thoughtfully
+    adapted and reimagined for storytelling purposes. Characters, situations, and settings
+    may be fictional, altered, or generated using AI. This content is created to deliver
+    positive messages, emotional insight, and meaningful reflection. Any resemblance to
+    real persons, living or dead, or actual events is purely coincidental. Viewer discretion
+    is advised.
+
+script:
+  min_words: 1400
+  max_words: 1700
+  banned_phrases:
+    - "subscribe to my channel"
+    - "like and subscribe"
+    - "hit the bell"
+
+text_model:
+  name: "gemini-3-flash-preview"
+  temperature: 0.9
+  max_output_tokens: 16384
+
+tts:
+  model: "gemini-2.5-flash-preview-tts"
+  voice: "Schedar"
+
+image_gen:
+  model: "gemini-2.5-flash-image"
+  seconds_per_image: 9
+  image_width: 1920
+  image_height: 1080
+  aspect_ratio: "16:9"
+
+subtitles:
+  font_size: 28
+  margin_v: 50
+
+thumbnail:
+  model: "gemini-2.5-flash-image"
+  width: 1280
+  height: 720
+  min_contrast_ratio: 3.0
+  text_overlay: true
+  fixed_image_prompt: "An attractive 22 year old woman in a bright sleeveless solid colored evening dress with cleavage facing the camera and looking surprised. No text in image."
+
+video:
+  fps: 24
+  codec: "libx264"
+  audio_codec: "aac"
+  bitrate: "8000k"
+
+youtube:
+  client_secrets_file: "client_secrets.json"
+  token_file: "youtube_token_revenge_chronicles.json"
+  category_id: "24"
+  default_language: "en"
+  privacy_status: "private"
+  tags:
+    - family revenge stories
+    - revenge stories
+    - family drama stories
+    - reddit family drama
+    - parents betrayal
+    - family betrayal
+    - best revenge stories
+    - audio stories
+
+retry:
+  max_attempts: 3
+  base_delay_seconds: 2
+  max_delay_seconds: 60
+
+scheduling:
+  timezone: "America/New_York"
+  publish_times:
+    - [6, 0]    # 6:00 AM ET
+    - [9, 0]    # 9:00 AM ET
+    - [12, 0]   # 12:00 PM ET
+    - [15, 0]   # 3:00 PM ET
+    - [18, 0]   # 6:00 PM ET
+    - [21, 0]   # 9:00 PM ET
+
+max_parallel_videos: 6
+render_workers: 20
+cleanup_after_upload: true
+
+output:
+  base_dir: "output"
