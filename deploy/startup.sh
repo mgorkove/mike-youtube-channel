@@ -88,6 +88,13 @@ YOUTUBE_CLIENT_ID=$(fetch_secret "YOUTUBE_CLIENT_ID_REVENGE")
 YOUTUBE_CLIENT_SECRET=$(fetch_secret "YOUTUBE_CLIENT_SECRET_REVENGE")
 YOUTUBE_REFRESH_TOKEN=$(fetch_secret "YOUTUBE_REFRESH_TOKEN_REVENGE")
 EOF
+elif [ "$CHANNEL" = "senior_savvy" ]; then
+    cat >> "$APP_DIR/.env" <<EOF
+YOUTUBE_CLIENT_ID=$(fetch_secret "YOUTUBE_CLIENT_ID_SENIOR")
+YOUTUBE_CLIENT_SECRET=$(fetch_secret "YOUTUBE_CLIENT_SECRET_SENIOR")
+YOUTUBE_REFRESH_TOKEN=$(fetch_secret "YOUTUBE_REFRESH_TOKEN_SENIOR")
+PEXELS_API_KEY=$(fetch_secret "PEXELS_API_KEY")
+EOF
 fi
 
 chmod 600 "$APP_DIR/.env"
@@ -103,7 +110,7 @@ docker build -t video-pipeline "$APP_DIR"
 DAY_OF_WEEK=$(date +%u)  # 1=Monday ... 7=Sunday
 
 PIPELINE_EXIT=0
-if [ "$CHANNEL" = "revenge_stories" ] || [ "$CHANNEL" = "heartbreak_chronicles" ] || [ "$DAY_OF_WEEK" = "7" ]; then
+if [ "$CHANNEL" = "revenge_stories" ] || [ "$CHANNEL" = "heartbreak_chronicles" ] || [ "$CHANNEL" = "senior_savvy" ] || [ "$DAY_OF_WEEK" = "7" ]; then
     echo "Full pipeline run (generate + upload) for $CHANNEL..."
     docker run --rm \
         --env-file "$APP_DIR/.env" \
