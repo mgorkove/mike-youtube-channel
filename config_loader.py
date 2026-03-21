@@ -103,6 +103,9 @@ class Config:
     thumbnail_text_overlay: bool = False
     thumbnail_font_path: str = "assets/Anton-Regular.ttf"
     thumbnail_fixed_image_prompt: str = ""
+    thumbnail_portrait_width: int = 512
+    thumbnail_background_style: str = "bokeh"  # "bokeh" or "gradient"
+    thumbnail_story_badge: bool = False
 
     # Stock footage settings (stock_footage mode)
     seconds_per_clip: int = 10
@@ -256,6 +259,9 @@ def load_config(config_path: str = "config.yaml") -> Config:
         thumbnail_text_overlay=raw.get("thumbnail", {}).get("text_overlay", False),
         thumbnail_font_path=raw.get("thumbnail", {}).get("font_path", "assets/Anton-Regular.ttf"),
         thumbnail_fixed_image_prompt=raw.get("thumbnail", {}).get("fixed_image_prompt", ""),
+        thumbnail_portrait_width=raw.get("thumbnail", {}).get("portrait_width", 512),
+        thumbnail_background_style=raw.get("thumbnail", {}).get("background_style", "bokeh"),
+        thumbnail_story_badge=raw.get("thumbnail", {}).get("story_badge", False),
         background_image_path=bg_image,
         shorts_background_image_path=shorts_bg_image,
         skip_quality_checks=raw.get("skip_quality_checks", False),

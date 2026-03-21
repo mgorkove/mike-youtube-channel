@@ -61,6 +61,9 @@ thumbnail:
   min_contrast_ratio: 3.0
   text_overlay: true
   fixed_image_prompt: "Close-up portrait of a distinguished 60 year old man with silver hair, wearing a dark suit, intense angry expression, clenched jaw, dramatic studio lighting, solid black background, photorealistic"
+  portrait_width: 620
+  background_style: "gradient"
+  story_badge: false
 
 video:
   fps: 24

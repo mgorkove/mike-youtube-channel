@@ -102,6 +102,93 @@ def _create_bokeh_background(width: int, height: int) -> Image.Image:
     return img.convert("RGB")
 
 
+def _create_dark_gradient_background(width: int, height: int) -> Image.Image:
+    """Create a clean dark background with subtle warm side lighting.
+
+    Mimics the cinematic studio-lit look: near-black base with a soft warm
+    glow on the left (behind text) and a subtle rim light on the right
+    (behind portrait).
+    """
+    img = Image.new("RGB", (width, height))
+    draw = ImageDraw.Draw(img)
+
+    # Very dark base gradient (top slightly lighter than bottom)
+    for y in range(height):
+        t = y / height
+        r = int(15 - 5 * t)
+        g = int(12 - 4 * t)
+        b = int(14 - 5 * t)
+        draw.line([(0, y), (width, y)], fill=(r, g, b))
+
+    # Soft warm glow on left side (behind text area)
+    glow = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    glow_draw = ImageDraw.Draw(glow)
+    glow_draw.ellipse(
+        [-width // 6, height // 4, width * 2 // 5, height * 3 // 4],
+        fill=(80, 50, 20, 30),
+    )
+    glow = glow.filter(ImageFilter.GaussianBlur(radius=100))
+    img = img.convert("RGBA")
+    img = Image.alpha_composite(img, glow)
+
+    # Subtle rim light on right edge (behind portrait)
+    rim = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    rim_draw = ImageDraw.Draw(rim)
+    rim_draw.ellipse(
+        [width * 3 // 4, -height // 4, width + width // 4, height + height // 4],
+        fill=(60, 45, 30, 25),
+    )
+    rim = rim.filter(ImageFilter.GaussianBlur(radius=80))
+    img = Image.alpha_composite(img, rim)
+
+    return img.convert("RGB")
+
+
+def _draw_story_badge(
+    img: Image.Image,
+    font_path: str,
+    portrait_width: int,
+) -> Image.Image:
+    """Draw a red 'STORY' badge at the bottom-center of the portrait area."""
+    img = img.copy()
+    draw = ImageDraw.Draw(img)
+    width, height = img.size
+
+    badge_text = "STORY"
+    badge_font_size = 28
+    try:
+        badge_font = ImageFont.truetype(font_path, badge_font_size)
+    except (OSError, IOError):
+        badge_font = ImageFont.load_default()
+
+    # Measure text
+    bbox = draw.textbbox((0, 0), badge_text, font=badge_font)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+
+    pad_x, pad_y = 16, 8
+    badge_w = text_w + pad_x * 2
+    badge_h = text_h + pad_y * 2
+
+    # Position: bottom-center of the portrait area
+    portrait_center_x = width - portrait_width // 2
+    badge_x = portrait_center_x - badge_w // 2
+    badge_y = height - badge_h - 18
+
+    # Draw red rounded rectangle
+    draw.rounded_rectangle(
+        [badge_x, badge_y, badge_x + badge_w, badge_y + badge_h],
+        radius=6,
+        fill=(220, 20, 20),
+    )
+    # Draw text centered in badge
+    text_x = badge_x + (badge_w - text_w) // 2
+    text_y = badge_y + (badge_h - text_h) // 2 - 2
+    draw.text((text_x, text_y), badge_text, font=badge_font, fill=COLOR_WHITE)
+
+    return img
+
+
 def _word_wrap(text: str, font, max_width: int, draw: ImageDraw.Draw,
                stroke_width: int) -> list[str]:
     """Break text into lines that fit within max_width at the given font size."""
@@ -453,12 +540,14 @@ def _generate_composite_thumbnail(
     client: genai.Client,
     reference_img: Image.Image | None,
 ) -> Path:
-    """Composite mode: narrow portrait + dark bokeh background + text overlay."""
+    """Composite mode: narrow portrait + dark background + text overlay."""
     thumb_w = config.thumbnail_width
     thumb_h = config.thumbnail_height
+    portrait_w = config.thumbnail_portrait_width
+    portrait_h = thumb_h  # always full height
 
-    # --- Generate narrow portrait of the woman ---
-    logger.info(f"Generating portrait ({PORTRAIT_WIDTH}x{PORTRAIT_HEIGHT})...")
+    # --- Generate narrow portrait ---
+    logger.info(f"Generating portrait ({portrait_w}x{portrait_h})...")
     contents = [image_prompt]
     if reference_img:
         contents.append(reference_img)
@@ -472,23 +561,31 @@ def _generate_composite_thumbnail(
     )
 
     portrait = _extract_image(response)
-    # Resize to fill the right portion of the thumbnail
-    portrait = portrait.resize((PORTRAIT_WIDTH, PORTRAIT_HEIGHT), Image.LANCZOS)
+    portrait = portrait.resize((portrait_w, portrait_h), Image.LANCZOS)
 
-    # --- Create dark bokeh background ---
+    # --- Create background ---
     logger.info("Creating background...")
-    background = _create_bokeh_background(thumb_w, thumb_h)
+    if config.thumbnail_background_style == "gradient":
+        background = _create_dark_gradient_background(thumb_w, thumb_h)
+    else:
+        background = _create_bokeh_background(thumb_w, thumb_h)
 
     # --- Composite: paste portrait on the right ---
-    paste_x = thumb_w - PORTRAIT_WIDTH
-    paste_y = 0
-    background.paste(portrait, (paste_x, paste_y))
+    paste_x = thumb_w - portrait_w
+    background.paste(portrait, (paste_x, 0))
 
     # --- Overlay text on the left ---
     if overlay_text:
         logger.info("Overlaying text...")
         background = _overlay_text(
             background, overlay_text, config.thumbnail_font_path,
+        )
+
+    # --- Story badge ---
+    if config.thumbnail_story_badge:
+        logger.info("Drawing STORY badge...")
+        background = _draw_story_badge(
+            background, config.thumbnail_font_path, portrait_w,
         )
 
     thumb_path = output_dir / "thumbnail.png"
