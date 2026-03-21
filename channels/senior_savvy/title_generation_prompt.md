@@ -26,24 +26,47 @@ CURIOSITY TRIGGERS (pick one — this is what makes them NEED to click):
 - Hidden knowledge: "Forgotten", "Lost", "Secret", "Banned", "Forbidden"
 - Unexpected contrast: "Tiny", "Cheap", "Free", "Common", "Backyard"
 
-BOLD PROMISES (pick one — this is the payoff they're clicking for):
-- "That Will Heal You Instantly" (PROVEN #1 performer — use often)
-- "That Reverse Aging Instantly" (PROVEN #2 performer — vanity + fear)
-- "That Will Heal Your Body Instantly After 60" (age-specific urgency)
-- "That Restore Memory Instantly" (brain health — deep fear for 50+)
-- "That Work Better Than Medication" (vs. establishment — rebellious click)
-- "That Add 10 Years to Your Life" (concrete longevity promise)
-- "That Doctors Don't Want You to Know About" (forbidden knowledge)
-- "That Big Pharma Is Trying to Hide" (conspiracy angle — use sparingly)
-- "Your Doctor Will Never Tell You About" (insider knowledge)
-- "That Are 10X More Powerful Than Turmeric" (comparison to known item)
+BOLD PROMISES (you MUST rotate across these — NEVER use the same ending for consecutive titles):
+
+Category A — "Instantly" endings (use for ~40% of titles, not more):
+- "That Will Heal You Instantly"
+- "That Reverse Aging Instantly"
+- "That Restore Memory Instantly"
+
+Category B — Comparison hooks (use for ~30% of titles):
+- "That Work Better Than Medication"
+- "That Are 10X More Powerful Than Turmeric"
+- "That Outperform Any Supplement"
+- "That Beat Expensive Prescriptions"
+- "That Produce More Food Than Fruit Trees" (for plant topics)
+
+Category C — Forbidden knowledge / authority hooks (use for ~20% of titles):
+- "Your Doctor Will NEVER Tell You About"
+- "Doctors Don't Want You to Know About"
+- "That Big Pharma Is Trying to Hide"
+- "Cardiologists Eat Every Day"
+- "Centenarians Eat Every Single Day"
+
+Category D — Concrete longevity / transformation (use for ~10% of titles):
+- "That Add 10 Years to Your Life"
+- "That Make You Look 20 Years Younger"
+- "That Changed Everything for Seniors Over 60"
+
+VARIETY IS CRITICAL:
+- If the topic is about BRAIN/MEMORY → use "RESTORE Memory" not generic "HEAL You"
+- If the topic is about JOINTS/PAIN → use "DESTROY Joint Pain" or "Better Than Medication"
+- If the topic is about SLEEP → use "Work INSTANTLY" or "Better Than Melatonin"
+- If the topic is about HEART → use "Cardiologists Don't Want You to Know" or "Unclog Arteries"
+- If the topic is about GUT → use "Better Than Probiotics" or "REPAIR Your Gut"
+- If the topic is about WEIGHT → use "BURN Belly Fat" or "Boost Metabolism 10X"
+- If the topic is about SKIN/AGING → use "REVERSE Aging" or "Make You Look 20 Years Younger"
+- MATCH the ending to the topic — don't default to "Heal You Instantly" for everything
 
 POWER MOVES that boost CTR:
-- "Instantly" at the end is the single highest-performing word in this niche
-- Exclamation mark at the end adds energy: "...Heal You Instantly!"
 - Comparison hooks outperform standalone claims: "Better Than Medication", "More Powerful Than Turmeric", "10X More [Benefit] Than [Known Thing]"
 - Specificity always wins: "20 Collagen Rich Foods" > "20 Healthy Foods"
 - Cultural labels always win: "20 Japanese Longevity Foods" > "20 Longevity Foods"
+- Ending with "Instantly!" works but ONLY when rotated with other endings
 
 CAPITALIZATION:
 - Title Case as baseline
