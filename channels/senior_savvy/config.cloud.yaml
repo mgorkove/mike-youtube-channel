@@ -1,4 +1,4 @@
-video_count: 1
+video_count: 3
 video_mode: "stock_footage"
 skip_quality_checks: true
 skip_shorts: true
@@ -96,9 +96,10 @@ scheduling:
   timezone: "America/New_York"
   publish_times:
     - [8, 0]    # 8:00 AM ET
-    - [18, 0]   # 6:00 PM ET
+    - [14, 0]   # 2:00 PM ET
+    - [20, 0]   # 8:00 PM ET
 
-max_parallel_videos: 1
+max_parallel_videos: 3
 render_workers: 20
 cleanup_after_upload: true
 
