@@ -73,6 +73,9 @@ def _generate_single_image(
                 ),
             )
 
+            if not response.candidates or not response.candidates[0].content or not response.candidates[0].content.parts:
+                raise RuntimeError(f"Empty response for prompt {index + 1} (no image data returned)")
+
             for part in response.candidates[0].content.parts:
                 if part.inline_data and part.inline_data.mime_type and \
                    part.inline_data.mime_type.startswith("image/"):
