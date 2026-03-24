@@ -23,6 +23,17 @@ PER_IMAGE_RETRIES = 3
 RETRY_DELAY = 2
 
 
+def _find_nearest_neighbor(index: int, images_dir: Path, total: int) -> Path | None:
+    """Find the closest existing image by index (prefer previous, then next)."""
+    for offset in range(1, total):
+        for candidate_idx in [index - offset, index + offset]:
+            if 0 <= candidate_idx < total:
+                candidate = images_dir / f"{candidate_idx + 1:03d}.png"
+                if candidate.exists():
+                    return candidate
+    return None
+
+
 def _generate_single_image(
     index: int,
     prompt: str,
@@ -63,34 +74,37 @@ def _generate_single_image(
         logger.info(f"Skipping existing image {index + 1}/{total}: {img_path}")
         return img_path
 
+    def _attempt_generate(attempt_contents):
+        """Try to generate an image from the given contents. Returns img_path on success."""
+        response = client.models.generate_content(
+            model=config.image_model,
+            contents=attempt_contents,
+            config=types.GenerateContentConfig(
+                response_modalities=["TEXT", "IMAGE"],
+            ),
+        )
+
+        if not response.candidates or not response.candidates[0].content or not response.candidates[0].content.parts:
+            raise RuntimeError(f"Empty response for prompt {index + 1} (no image data returned)")
+
+        for part in response.candidates[0].content.parts:
+            if part.inline_data and part.inline_data.mime_type and \
+               part.inline_data.mime_type.startswith("image/"):
+                img_data = part.inline_data.data
+                img = Image.open(io.BytesIO(img_data))
+                img = img.resize(
+                    (config.image_width, config.image_height),
+                    Image.LANCZOS,
+                )
+                img.save(img_path, "PNG")
+                logger.info(f"Saved image {index + 1}/{total}: {img_path}")
+                return img_path
+
+        raise RuntimeError(f"No image data in response for prompt {index + 1}")
+
     for attempt in range(PER_IMAGE_RETRIES):
         try:
-            response = client.models.generate_content(
-                model=config.image_model,
-                contents=contents,
-                config=types.GenerateContentConfig(
-                    response_modalities=["TEXT", "IMAGE"],
-                ),
-            )
-
-            if not response.candidates or not response.candidates[0].content or not response.candidates[0].content.parts:
-                raise RuntimeError(f"Empty response for prompt {index + 1} (no image data returned)")
-
-            for part in response.candidates[0].content.parts:
-                if part.inline_data and part.inline_data.mime_type and \
-                   part.inline_data.mime_type.startswith("image/"):
-                    img_data = part.inline_data.data
-                    img = Image.open(io.BytesIO(img_data))
-                    img = img.resize(
-                        (config.image_width, config.image_height),
-                        Image.LANCZOS,
-                    )
-                    img.save(img_path, "PNG")
-                    logger.info(f"Saved image {index + 1}/{total}: {img_path}")
-                    return img_path
-
-            raise RuntimeError(f"No image data in response for prompt {index + 1}")
-
+            return _attempt_generate(contents)
         except Exception as e:
             if attempt < PER_IMAGE_RETRIES - 1:
                 logger.warning(
@@ -98,8 +112,48 @@ def _generate_single_image(
                 )
                 time.sleep(RETRY_DELAY * (attempt + 1))
             else:
+                logger.warning(
+                    f"Image {index + 1}/{total} failed all {PER_IMAGE_RETRIES} attempts. "
+                    f"Retrying with sanitized prompt..."
+                )
+
+    # Fallback: retry with a generic/sanitized version of the prompt
+    # (the original may have been blocked by content policy)
+    sanitized_prompt = (
+        f"Generate a muted, desaturated cartoon illustration in 16:9 aspect ratio. "
+        f"A dramatic scene related to: {prompt}. "
+        f"Use a subdued, earthy color palette with muted greens, grays, tans, and olive tones. "
+        f"Avoid bright or vibrant colors. Clean cartoon style with soft shading and clean outlines. "
+        f"No text or watermarks in the image. Keep the scene appropriate for all audiences."
+    )
+    sanitized_contents = [sanitized_prompt]
+    if reference_img:
+        sanitized_contents.append(reference_img)
+
+    for attempt in range(PER_IMAGE_RETRIES):
+        try:
+            return _attempt_generate(sanitized_contents)
+        except Exception as e:
+            if attempt < PER_IMAGE_RETRIES - 1:
+                logger.warning(
+                    f"Image {index + 1}/{total} sanitized attempt {attempt + 1} failed: {e}. Retrying..."
+                )
+                time.sleep(RETRY_DELAY * (attempt + 1))
+            else:
+                # Last resort: duplicate the nearest neighbor image
+                logger.warning(
+                    f"Image {index + 1}/{total} failed all attempts including sanitized fallback. "
+                    f"Duplicating nearest neighbor image."
+                )
+                neighbor = _find_nearest_neighbor(index, images_dir, total)
+                if neighbor:
+                    import shutil
+                    shutil.copy2(neighbor, img_path)
+                    logger.info(f"Copied {neighbor} -> {img_path} as fallback for image {index + 1}")
+                    return img_path
                 raise RuntimeError(
-                    f"Image {index + 1} failed after {PER_IMAGE_RETRIES} attempts: {e}"
+                    f"Image {index + 1} failed after {PER_IMAGE_RETRIES} attempts "
+                    f"(including sanitized fallback) and no neighbor found: {e}"
                 ) from e
 
 
