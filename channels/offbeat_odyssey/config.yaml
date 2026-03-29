@@ -4,19 +4,19 @@ skip_quality_checks: true
 
 channel:
   theme: >
-    This channel explores the world's most unusual, surprising, and off-the-beaten-path
-    travel destinations. Each video takes viewers on a narrated journey to bizarre towns,
-    hidden natural wonders, abandoned places, strange cultural traditions, and destinations
-    most people have never heard of. The tone is curious, conversational, and wonder-filled —
-    like a well-traveled friend telling you about the craziest place they've ever been.
-    Videos combine stunning stock footage with engaging narration that blends history,
-    geography, local culture, and personal storytelling.
+    This channel makes Top 10 travel list videos about stunning US destinations —
+    national parks, charming small towns, historic cities, hidden gems, and must-do
+    experiences. Each video counts down the best things to see, do, or visit at a
+    specific destination. The tone is enthusiastic, conversational, and informative —
+    like an excited friend who just got back from an incredible trip. Videos combine
+    beautiful stock footage with engaging narration that highlights what makes each
+    spot special, including practical tips and surprising facts.
   required_keywords:
     - travel
-    - hidden destinations
-    - unusual places
-    - off the beaten path
+    - things to do
     - travel guide
+    - best places to visit
+    - hidden gems
   disclaimer: >
     This video is for entertainment and educational purposes only. Travel conditions,
     regulations, and accessibility may change. Always research current conditions and
@@ -79,15 +79,15 @@ youtube:
   privacy_status: "private"
   tags:
     - travel
-    - hidden destinations
-    - unusual places
-    - off the beaten path
+    - things to do
     - travel guide
+    - best places to visit
     - hidden gems
-    - unique travel
-    - world travel
-    - adventure travel
-    - strange places
+    - USA travel
+    - national parks
+    - bucket list
+    - top 10
+    - must visit
 
 retry:
   max_attempts: 3
