@@ -1,0 +1,107 @@
+video_count: 1
+video_mode: "stock_footage"
+skip_quality_checks: true
+
+channel:
+  theme: >
+    This channel explores the world's most unusual, surprising, and off-the-beaten-path
+    travel destinations. Each video takes viewers on a narrated journey to bizarre towns,
+    hidden natural wonders, abandoned places, strange cultural traditions, and destinations
+    most people have never heard of. The tone is curious, conversational, and wonder-filled —
+    like a well-traveled friend telling you about the craziest place they've ever been.
+    Videos combine stunning stock footage with engaging narration that blends history,
+    geography, local culture, and personal storytelling.
+  required_keywords:
+    - travel
+    - hidden destinations
+    - unusual places
+    - off the beaten path
+    - travel guide
+  disclaimer: >
+    This video is for entertainment and educational purposes only. Travel conditions,
+    regulations, and accessibility may change. Always research current conditions and
+    obtain necessary permits before visiting any destination mentioned in this video.
+
+script:
+  min_words: 1400
+  max_words: 1700
+  banned_phrases:
+    - "subscribe to my channel"
+    - "like and subscribe"
+    - "hit the bell"
+    - "smash that like button"
+
+text_model:
+  name: "gemini-3-flash-preview"
+  temperature: 0.9
+  max_output_tokens: 16384
+
+tts:
+  model: "gemini-2.5-flash-preview-tts"
+  voice: "Orus"
+
+image_gen:
+  model: "gemini-2.5-flash-image"
+  seconds_per_image: 9
+  image_width: 1920
+  image_height: 1080
+  aspect_ratio: "16:9"
+
+stock_footage:
+  seconds_per_clip: 8
+
+subtitles:
+  font_size: 28
+  margin_v: 50
+
+thumbnail:
+  model: "gemini-2.5-flash-image"
+  width: 1280
+  height: 720
+  min_contrast_ratio: 3.0
+  text_overlay: true
+  fixed_image_prompt: "Stunning wide-angle landscape photograph of an exotic remote destination with dramatic lighting, vivid colors, golden hour, cinematic composition. No text in image."
+  portrait_width: 620
+  background_style: "bokeh"
+  story_badge: false
+
+video:
+  fps: 24
+  codec: "libx264"
+  audio_codec: "aac"
+  bitrate: "8000k"
+
+youtube:
+  client_secrets_file: "client_secrets.json"
+  token_file: "youtube_token_offbeat.json"
+  category_id: "19"
+  default_language: "en"
+  privacy_status: "private"
+  tags:
+    - travel
+    - hidden destinations
+    - unusual places
+    - off the beaten path
+    - travel guide
+    - hidden gems
+    - unique travel
+    - world travel
+    - adventure travel
+    - strange places
+
+retry:
+  max_attempts: 3
+  base_delay_seconds: 2
+  max_delay_seconds: 60
+
+scheduling:
+  timezone: "America/New_York"
+  publish_times:
+    - [10, 0]   # 10:00 AM ET
+    - [18, 0]   # 6:00 PM ET
+
+max_parallel_videos: 1
+cleanup_after_upload: false
+
+output:
+  base_dir: "output"
