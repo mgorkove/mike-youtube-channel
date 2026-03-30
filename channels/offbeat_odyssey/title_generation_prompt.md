@@ -1,59 +1,49 @@
-Generate ONE YouTube title for a US travel destinations channel.
+Generate ONE YouTube title for an offbeat travel destinations channel.
 
 Topic: "[TOPIC]"
 
-TITLE FORMULA — use one of these proven structures (based on what performs best on this channel):
+TITLE FORMULA — use one of these proven structures:
 
-Structure 1: "Top 10 Most STUNNING Places in [Destination]!"
-- "Top 10 Most STUNNING Places in Savannah, Georgia!"
-- "Top 10 Most BEAUTIFUL Spots in Lake Tahoe, California!"
+Structure 1: "This [Place/Thing] in [Country] [Shocking Detail]"
+- "This Town in Turkey Has Been Underground for 3,000 Years"
+- "This Lake in Senegal Turns BRIGHT PINK Every Year"
+- "This Island in Japan Is Completely Overrun by Rabbits"
 
-Structure 2: "Top 10 Things You NEED To Do In [Destination]!"
-- "Top 10 Things You NEED To Do In Shenandoah National Park!"
-- "Top 10 Things You NEED To Do In Washington, DC!"
+Structure 2: "[Country] Has a [Place/Thing] That [Impossible-Sounding Fact]"
+- "Bolivia Has a Salt Flat That Turns Into a Giant MIRROR"
+- "Mexico Has a Cave Filled With Crystals the Size of BUSES"
+- "Norway Has a Town That Gets ZERO Sunlight for Months"
 
-Structure 3: "Top 10 HIDDEN GEMS in [Destination] You MUST VISIT!"
-- "Top 10 HIDDEN GEMS in Sequoia National Park You MUST VISIT!"
-- "Top 10 HIDDEN GEMS in Portland, Oregon You MUST VISIT!"
+Structure 3: "The [Superlative] [Place] on Earth Is in [Country]"
+- "The Most DANGEROUS Island on Earth Is in the Indian Ocean"
+- "The Most COLORFUL River on Earth Is in Colombia"
+- "The Most BIZARRE Village on Earth Is in Indonesia"
 
-Structure 4: "Top 10 [Superlative] [Things] in [Destination]!"
-- "Top 10 UNFORGETTABLE Experiences in Big Bend National Park!"
-- "Top 10 BREATHTAKING Views in the Colorado Rockies!"
+Structure 4: "Inside the [Place] Where [Fascinating Detail]"
+- "Inside the City That Was ABANDONED Overnight"
+- "Inside the Village Where Everyone Speaks in WHISTLES"
+- "Inside the Hotel Made Entirely of SALT"
 
-Structure 5: "Top 10 Most INCREDIBLE [Things] in [Destination]!"
-- "Top 10 Most INCREDIBLE Hikes in Glacier National Park!"
-- "Top 10 Most INCREDIBLE Things to See in Charleston!"
-
-Structure 6 (BROWSE-FRIENDLY — for comparative/aggregate topics):
-"Top 10 [Superlative] [Category] in America [Hook]!"
-- "Top 10 Most STUNNING Small Towns in America!"
-- "Top 10 US Destinations That Look Like EUROPE!"
-- "Top 10 Most UNDERRATED National Parks Nobody Talks About!"
-- "Top 10 CHEAPEST Beach Towns in America Worth Visiting!"
-- "Top 10 Most BEAUTIFUL Drives in the United States!"
-
-Structure 7 (SEASONAL):
-"Top 10 BEST [Season] [Category] in America!"
-- "Top 10 BEST Spring Break Destinations in the US!"
-- "Top 10 Most STUNNING Fall Foliage Drives in America!"
-- "Top 10 COZIEST Winter Getaways in the United States!"
+Structure 5: "Why [Country/Place] Has [Surprising Thing] (and It's Real)"
+- "Why This Beach in the Maldives GLOWS Blue at Night"
+- "Why This Town in Italy Is Selling Houses for ONE EURO"
+- "Why This Tribe Worships a WW2 Soldier as a GOD"
 
 CAPITALIZATION:
-- Title Case as baseline
-- Put 1-2 KEY dramatic words in ALL CAPS: STUNNING, HIDDEN, NEED, MUST, INCREDIBLE, BREATHTAKING, UNFORGETTABLE, BEAUTIFUL
-- Do NOT capitalize more than 2 words — keep it punchy, not spammy
+- Sentence case as baseline (NOT Title Case)
+- Put exactly ONE key word or phrase in ALL CAPS for emphasis: BRIGHT PINK, MIRROR, ZERO, ABANDONED, WHISTLES, SALT, GLOWS, ONE EURO, GOD, BUSES
+- Do NOT capitalize more than one phrase — keep it punchy, not spammy
 
-LENGTH: Target 45-65 characters. Short enough to display fully on mobile.
+LENGTH: Target 45-70 characters. Short enough to display fully on mobile.
 
 RULES:
-- Must start with "Top 10" — this is the channel's proven format
-- For single-destination topics: mention the specific destination name and state
-- For aggregate/comparative topics: mention the category and "America" / "US" / "United States"
-- Must include one dramatic ALL CAPS word
-- End with "!" for energy
+- Do NOT start with "Top 10" — this channel uses curiosity-driven titles, not listicles
+- Must mention the specific place AND country/region
+- Must contain one concrete, surprising detail that creates a curiosity gap
+- The viewer should think "wait, is that real?" or "I need to see this"
 - Do NOT use "YOU WON'T BELIEVE", "GONE WRONG", "EPIC", or generic clickbait
+- Do NOT end with "!" unless it genuinely adds energy — periods work fine
 - Do NOT use hashtags or emojis
-- Do NOT reference "reddit" or "stories"
-- Should make the viewer think "I need to watch this before my next trip"
+- Do NOT use question marks — make statements, not questions
 
 Return ONLY the title text, nothing else. No quotes, no explanation.

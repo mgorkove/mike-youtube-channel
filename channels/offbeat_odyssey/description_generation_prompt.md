@@ -1,4 +1,4 @@
-Write a YouTube video description for a Top 10 US travel destinations video. The topic may be about a specific destination OR a comparative list across multiple US destinations — adapt your description accordingly.
+Write a YouTube video description for an offbeat travel destinations video.
 
 Title: "[TITLE]"
 Topic: "[TOPIC]"
@@ -6,27 +6,27 @@ Topic: "[TOPIC]"
 FORMAT — follow this exact structure:
 
 1. HOOK LINE (first sentence, under 150 characters):
-Write one punchy sentence that front-loads searchable keywords. This line appears in YouTube search results — it must grab attention AND contain the primary destination keyword.
+Write one punchy sentence that front-loads the most surprising fact. This line appears in YouTube search results — it must grab attention immediately.
 Examples:
-- "Discover the 10 most stunning places in Savannah, Georgia that you absolutely cannot miss."
-- "From hidden waterfalls to breathtaking overlooks — here are the top 10 things to do in Shenandoah."
-- "These 10 hidden gems in Sequoia National Park will make you rethink your entire trip."
+- "There's a town in Turkey where 20,000 people lived completely underground — and you can still walk through it."
+- "This lake in Senegal turns bright pink every single year, and scientists finally know why."
+- "An entire Japanese island was abandoned in a single day. Fifty years later, it's still frozen in time."
 
 2. STORY SUMMARY (2-4 sentences, third person):
-Concise description of what the video covers — the destination, what kind of spots are featured, and why it's worth watching. Mention specific highlights from the list to create curiosity.
+Concise description of what the video covers — the place, what makes it unusual, and why it's worth watching. Mention specific details that create curiosity.
 
 3. Blank line, then these EXACT keywords (copy verbatim, on one line):
-Travel, things to do, travel guide, best places to visit, hidden gems, USA travel, national parks, bucket list, top 10, must visit, road trip, vacation ideas, travel tips, beautiful places, adventure travel
+Travel, offbeat travel, unusual places, hidden places, bizarre destinations, unique travel, bucket list, amazing places, incredible places, strangest places on earth, beautiful places, travel destinations, world travel
 
 4. Blank line, then 5-8 hashtags relevant to this specific video's destination:
-Always include: #travel #top10 #hiddengems
-Add 3-5 more specific to the destination (e.g., #savannah #georgia #nationalparks #roadtrip #smalltownusa #hiking)
+Always include: #travel #offbeattravel #hiddengems
+Add 3-5 more specific to the destination (e.g., #turkey #cappadocia #undergroundcity #ancienthistory #cavetown)
 
 5. Blank line, then this exact disclaimer:
 [DISCLAIMER]
 
 RULES:
-- First sentence MUST be under 150 characters and contain the destination name or topic keyword
+- First sentence MUST be under 150 characters and contain the place name or country
 - Third person throughout
 - Do NOT use second person ("you") except in the hook line
 - Do NOT add bullet points, "In this video:" sections, timestamps, or extra formatting
