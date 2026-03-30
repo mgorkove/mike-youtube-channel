@@ -600,8 +600,13 @@ def _process_single_video(
         else:
             logger.info("Stage 9b: Uploading YouTube Short...")
             try:
-                short_title = title[:90] + " #Shorts"
-                short_desc = f"Full story: https://www.youtube.com/watch?v={video_id}\n\n{description}"
+                short_title = title[:95]
+                full_video_link = f"https://www.youtube.com/watch?v={video_id}" if video_id else ""
+                short_desc = (
+                    f"Watch the full video: {full_video_link}\n\n"
+                    if full_video_link
+                    else ""
+                ) + description
                 short_result = youtube.upload_video(
                     short_path, short_title, short_desc, thumb_path, config,
                     video_tags=video_tags,

@@ -1,4 +1,4 @@
-Write a 1,400-1,700 word narrated Top 10 travel list video script about [TOPIC]. This is an enthusiastic countdown of the best things to see, do, or visit at a specific US destination, told by a well-traveled narrator who genuinely loves sharing incredible places.
+Write a 1,400-1,700 word narrated Top 10 travel list video script about [TOPIC]. This is an enthusiastic countdown told by a well-traveled narrator who genuinely loves sharing incredible places. The topic may be about a specific US destination OR a comparative list across multiple destinations (e.g., "Top 10 most stunning small towns in America"). Adapt accordingly — for aggregate topics, each item should be a different destination with enough detail to make the viewer want to visit.
 
 RETENTION STRUCTURE — every section must keep the viewer watching through all 10 items:
 

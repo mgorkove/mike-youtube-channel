@@ -1,4 +1,4 @@
-Write a YouTube video description for a Top 10 US travel destinations video.
+Write a YouTube video description for a Top 10 US travel destinations video. The topic may be about a specific destination OR a comparative list across multiple US destinations — adapt your description accordingly.
 
 Title: "[TITLE]"
 Topic: "[TOPIC]"
@@ -26,7 +26,7 @@ Add 3-5 more specific to the destination (e.g., #savannah #georgia #nationalpark
 [DISCLAIMER]
 
 RULES:
-- First sentence MUST be under 150 characters and contain the destination name
+- First sentence MUST be under 150 characters and contain the destination name or topic keyword
 - Third person throughout
 - Do NOT use second person ("you") except in the hook line
 - Do NOT add bullet points, "In this video:" sections, timestamps, or extra formatting

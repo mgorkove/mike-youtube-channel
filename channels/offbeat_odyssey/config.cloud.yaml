@@ -1,6 +1,7 @@
-video_count: 3
+video_count: 6
 video_mode: "stock_footage"
 skip_quality_checks: true
+schedule_same_day: true
 
 channel:
   theme: >
@@ -103,11 +104,15 @@ scheduling:
   timezone: "America/New_York"
   publish_times:
     - [8, 0]    # 8:00 AM ET
-    - [13, 0]   # 1:00 PM ET
-    - [18, 0]   # 6:00 PM ET
+    - [11, 0]   # 11:00 AM ET
+    - [14, 0]   # 2:00 PM ET
+    - [17, 0]   # 5:00 PM ET
+    - [20, 0]   # 8:00 PM ET
+    - [22, 0]   # 10:00 PM ET
 
-max_parallel_videos: 3
-cleanup_after_upload: false
+max_parallel_videos: 6
+render_workers: 20
+cleanup_after_upload: true
 
 output:
   base_dir: "output"
