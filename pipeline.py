@@ -482,10 +482,14 @@ def _process_single_video(
             ckpt.mark_done("tags")
 
     # --- Stage 4: Voiceover ---
+    # Strip [GUN]/[VEHICLE] catalog markers from script before TTS
+    # (markers are only used for image prompt extraction)
+    narration_text = re.sub(r"\[(?:GUN|VEHICLE)\]\s*", "", script_text)
+
     audio_path = output_dir / "audio.wav"
     if ckpt.is_done("voiceover") and audio_path.exists():
         audio_duration = _wav_duration(audio_path)
-        word_count = len(script_text.split())
+        word_count = len(narration_text.split())
         logger.info(
             f"Stage 4: Loaded cached voiceover ({audio_duration:.1f}s)"
         )
@@ -493,14 +497,14 @@ def _process_single_video(
         logger.info("Stage 4: Generating voiceover...")
         tts_result = _retry_on_error(
             fn=lambda: speech.generate_voiceover(
-                script_text, output_dir, config, client
+                narration_text, output_dir, config, client
             ),
             stage_name="tts",
             config=config,
         )
         audio_path = tts_result.audio_path
         audio_duration = tts_result.duration_seconds
-        word_count = len(script_text.split())
+        word_count = len(narration_text.split())
         if not config.skip_quality_checks:
             audio_check = checks.check_audio_file(audio_path, word_count)
             quality_results["audio"] = audio_check
@@ -684,7 +688,22 @@ def _stages_5_to_8_ken_burns(
         logger.info(f"Stage 5: Loaded {len(image_prompts)} cached image prompts")
     else:
         logger.info("Stage 5: Extracting image prompts...")
-        if use_segments:
+        # Detect catalog-style scripts with [GUN]/[VEHICLE] markers
+        is_catalog = bool(re.search(r"\[(?:GUN|VEHICLE)\]", script_text))
+
+        if is_catalog:
+            image_prompts = _retry_on_error(
+                fn=lambda: text.extract_catalog_image_prompts(
+                    script_text, config, client
+                ),
+                stage_name="image_prompts",
+                config=config,
+            )
+            _save_artifact(
+                prompts_path,
+                json.dumps(image_prompts, indent=2),
+            )
+        elif use_segments:
             segments_data = _retry_on_error(
                 fn=lambda: text.extract_image_prompts_with_segments(
                     script_text, num_images, config, client

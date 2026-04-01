@@ -623,3 +623,62 @@ Return ONLY a JSON array of objects. Example:
         f"(target was ~{num_images}, {has_segments} with segment text)"
     )
     return valid
+
+
+def extract_catalog_image_prompts(
+    script: str,
+    config: Config,
+    client: genai.Client,
+) -> list[str]:
+    """Extract image prompts for catalog-style scripts with [GUN]/[VEHICLE] markers.
+
+    Parses the script to find each cataloged item, then asks the LLM to
+    produce a replacement instruction for each item. Each prompt is prefixed
+    with [GUN] or [VEHICLE] so the image generator picks the correct
+    reference template.
+    """
+    prompt = f"""You are a visual director for a military equipment catalog YouTube channel.
+
+The following script describes military items, each marked with [GUN] or [VEHICLE].
+
+SCRIPT:
+{script}
+
+For each item in the script (marked with [GUN] or [VEHICLE]), generate an image prompt that instructs an image model to modify a reference template image.
+
+The reference images show a single military item on a clean background with:
+- The item name as a label in the top-left
+- "RELEASE DATE: [year]" in the top-right
+
+For [GUN] items (firearms, weapons), the reference shows a gun. Your prompt should instruct the model to change it to the specific weapon.
+For [VEHICLE] items (tanks, aircraft, ships, etc.), the reference shows a fighter jet. Your prompt should instruct the model to change it to the specific vehicle.
+
+For each item, produce a prompt in this EXACT format:
+"[TYPE] Change the [gun/vehicle] to a [ITEM DESCRIPTION]. Change the release date to [YEAR]. Change the label to "[ITEM NAME]". Do not change anything else in the image."
+
+Where:
+- [TYPE] is either [GUN] or [VEHICLE], matching the script marker
+- For [GUN] items: use "Change the gun to a..." with a short description (e.g., "a rifle", "a submachine gun", "a heavy machine gun")
+- For [VEHICLE] items: use "Change the vehicle to a..." with a short description (e.g., "a main battle tank", "a stealth fighter jet", "a nuclear submarine")
+- [YEAR] is the year of introduction/service mentioned in the script
+- [ITEM NAME] is the common name of the weapon/vehicle (e.g., "AK-47 Rifle", "M1 Abrams Tank", "F-22 Raptor")
+
+Return ONLY a JSON array of prompt strings, one per item, in the same order they appear in the script. Example:
+["[GUN] Change the gun to a rifle. Change the release date to 1964. Change the label to \"M16 Rifle\". Do not change anything else in the image.", "[VEHICLE] Change the vehicle to a main battle tank. Change the release date to 1980. Change the label to \"M1 Abrams\". Do not change anything else in the image."]"""
+
+    response = client.models.generate_content(
+        model=config.text_model_name,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            temperature=0.3,
+            max_output_tokens=16384,
+        ),
+    )
+
+    prompts = _extract_json_array(response.text.strip())
+
+    if not prompts:
+        raise ValueError("LLM returned no catalog image prompts")
+
+    logger.info(f"Extracted {len(prompts)} catalog image prompts")
+    return prompts

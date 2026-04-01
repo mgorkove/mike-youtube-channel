@@ -1,28 +1,22 @@
-Generate ONE YouTube title for a military/special forces rank progression video.
+# Title Generation — Military Equipment Catalog
 
-Topic: "[TOPIC]"
+Generate a YouTube title for a military equipment catalog video.
 
-TITLE FORMAT — ALL titles MUST start with "Your Life as Every":
+## Title Formulas (pick the best fit for the topic):
 
-"Your Life as Every Rank in [Danger-Focused Description of Organization]"
+1. "Every [Country/Manufacturer] [Equipment Type] Ever Made"
+   - Examples: "Every Soviet Tank Ever Built", "Every SIG Sauer Weapon Ever Made"
 
-The title should frame the organization around DANGER, DEADLINESS, or FEAR. Do NOT just use the organization's plain name — reframe it to sound dangerous and intriguing, especially for viewers who may not know what the organization is.
+2. "Every [Country] [Equipment Type] Used in [War/Conflict]"
+   - Examples: "Every Japanese Weapon Used in WW2", "Every Soviet Truck Used in WWII"
 
-Examples:
-- "Your Life as Every Rank in the World's Deadliest Special Forces"
-- "Your Life as Every Rank in the Military That Erases Your Identity"
-- "Your Life as Every Rank in History's Most Brutal Army"
-- "Your Life as Every Rank in the Most Feared Unit on Earth"
-- "Your Life as Every Rank in the Military No Country Claims"
+3. "Every [Equipment Type] Ever Made by [Manufacturer]"
+   - Examples: "Every Rifle Ever Made by Kalashnikov", "Every Fighter Jet Built by Lockheed"
 
-RULES:
-- ALL titles MUST begin with "Your Life as Every Rank in"
-- Anchor on DANGER: use words like deadliest, most dangerous, most feared, most brutal, most secretive
-- Keep under 65 characters — shorter titles perform better on mobile
-- Use Title Case
-- You CAN use the organization's real name (e.g., "Navy SEALs", "French Foreign Legion") — pair it with a danger hook when possible
-- Do NOT use "Top 10", "You Won't Believe", or generic clickbait language
-- Do NOT reference specific years
-- Do NOT use hashtags or emojis
-
-Return ONLY the title text, nothing else. No quotes, no explanation.
+## Rules
+- Title MUST start with "Every"
+- Keep under 65 characters
+- Use the most recognizable name for the country/manufacturer
+- Use strong, specific equipment categories (not vague terms)
+- ALL CAPS for the equipment type if it fits naturally (e.g., "Every Soviet TANK Ever Built")
+- No clickbait, no questions, no colons

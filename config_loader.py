@@ -42,6 +42,7 @@ class Config:
     image_height: int
     image_aspect_ratio: str
     reference_image_path: Path | None
+    reference_image_alt_path: Path | None
 
     # Thumbnail
     thumbnail_model: str
@@ -191,6 +192,14 @@ def load_config(config_path: str = "config.yaml") -> Config:
         if not ref_image.exists():
             raise FileNotFoundError(f"Reference image not found: {ref_image}")
 
+    # Alternate reference image (optional — used for catalog-style videos
+    # where different items need different reference templates)
+    ref_image_alt = None
+    if image_gen.get("reference_image_alt"):
+        ref_image_alt = Path(image_gen["reference_image_alt"])
+        if not ref_image_alt.exists():
+            raise FileNotFoundError(f"Alternate reference image not found: {ref_image_alt}")
+
     # Background image (static_image mode)
     bg_image = None
     if raw.get("background_image"):
@@ -221,6 +230,7 @@ def load_config(config_path: str = "config.yaml") -> Config:
         tts_voice=raw["tts"]["voice"],
         image_model=image_gen.get("model", "gemini-2.5-flash-image"),
         reference_image_path=ref_image,
+        reference_image_alt_path=ref_image_alt,
         seconds_per_image=image_gen.get("seconds_per_image", 9),
         image_width=image_gen.get("image_width", 1920),
         image_height=image_gen.get("image_height", 1080),

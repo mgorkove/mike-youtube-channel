@@ -3,30 +3,32 @@ video_mode: "slideshow"
 
 channel:
   theme: >
-    This channel takes viewers on an immersive journey through every rank of the
-    world's most elite military units, special forces, and legendary warrior
-    organizations. Each video uses second-person POV narration ("You are now a...")
-    to walk the viewer through the complete rank progression from the lowest recruit
-    to the highest commander. The style is educational but cinematic — covering
-    duties, lifestyle, dangers, pay, and what changes at each level. Illustrations
-    are semi-realistic digital art in a comic book style showing soldiers,
-    operators, warriors, and military scenes.
+    This channel creates encyclopedia-style catalog videos covering every
+    military vehicle and weapon ever made by a specific country, manufacturer,
+    or used in a specific war. Each video systematically goes through 50-60
+    items (tanks, fighter jets, rifles, submarines, pistols, etc.), showing
+    a clean studio-style image of each item with its name and release date,
+    while the narrator provides key specs, history, and real-world performance.
+    The format is similar to "Every Soviet Submarine Ever Built" or
+    "Every SIG Sauer Weapon Ever Made."
   required_keywords:
     - military
-    - special forces
-    - ranks
-    - military ranks explained
-    - elite military
+    - weapons
+    - tanks
+    - military vehicles
+    - guns
+    - firearms
+    - military history
   disclaimer: >
     This video is for educational and entertainment purposes only. Information
-    about military ranks, duties, and operations is based on publicly available
-    sources and may not reflect current classified procedures. We are not
-    affiliated with any military organization. Some details are dramatized
-    for storytelling purposes. Viewer discretion is advised.
+    about military equipment is based on publicly available sources and may
+    contain inaccuracies. Some visuals are AI-generated illustrative
+    reconstructions. We are not affiliated with any military organization
+    or weapons manufacturer.
 
 script:
-  min_words: 750
-  max_words: 850
+  min_words: 4500
+  max_words: 5000
   banned_phrases:
     - "subscribe to my channel"
     - "like and subscribe"
@@ -50,8 +52,9 @@ tts:
 
 image_gen:
   model: "gemini-2.5-flash-image"
-  reference_image: "assets/mike-investor-thumbnail.jpg"
-  seconds_per_image: 2
+  reference_image: "channels/rank_recon/assets/gun_reference.png"
+  reference_image_alt: "channels/rank_recon/assets/vehicle_reference.png"
+  seconds_per_image: 30
   image_width: 1920
   image_height: 1080
   aspect_ratio: "16:9"
@@ -64,7 +67,7 @@ thumbnail:
 
 video:
   fps: 24
-  ken_burns_ratio: 0.04
+  ken_burns_ratio: 0.0
   codec: "libx264"
   audio_codec: "aac"
   bitrate: "8000k"
@@ -75,14 +78,16 @@ youtube:
   category_id: "27"
   privacy_status: "private"
   tags:
-    - military ranks
-    - special forces
-    - military explained
-    - army ranks
-    - elite military
-    - soldier life
-    - military training
-    - rank progression
+    - military vehicles
+    - military weapons
+    - tanks
+    - fighter jets
+    - guns
+    - firearms
+    - military history
+    - weapons explained
+    - every weapon ever made
+    - military equipment
 
 retry:
   max_attempts: 3

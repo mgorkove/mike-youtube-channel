@@ -6,6 +6,7 @@ for use as video frames. Uses parallel workers and per-image retries.
 
 import io
 import logging
+import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -21,6 +22,12 @@ logger = logging.getLogger(__name__)
 MAX_WORKERS = 5
 PER_IMAGE_RETRIES = 3
 RETRY_DELAY = 2
+
+# Regex to detect [GUN] or [VEHICLE] prefix in image prompts.
+# When present, the prefix selects which reference image to use:
+#   [GUN]     → config.reference_image_path  (primary)
+#   [VEHICLE] → config.reference_image_alt_path (alternate)
+_REF_TYPE_PATTERN = re.compile(r"^\[(GUN|VEHICLE)\]\s*", re.IGNORECASE)
 
 
 def _find_nearest_neighbor(index: int, images_dir: Path, total: int) -> Path | None:
@@ -42,9 +49,28 @@ def _generate_single_image(
     config: Config,
     client: genai.Client,
     total: int,
+    reference_img_alt: Image.Image | None = None,
 ) -> Path:
     """Generate a single image with per-image retry logic."""
-    if reference_img:
+    # Check for [GUN]/[VEHICLE] prefix to select reference image
+    ref_match = _REF_TYPE_PATTERN.match(prompt)
+    if ref_match and reference_img_alt is not None:
+        ref_type = ref_match.group(1).upper()
+        prompt = _REF_TYPE_PATTERN.sub("", prompt)  # strip the prefix
+        active_ref = reference_img if ref_type == "GUN" else reference_img_alt
+    else:
+        if ref_match:
+            prompt = _REF_TYPE_PATTERN.sub("", prompt)
+        active_ref = reference_img
+
+    if ref_match and active_ref:
+        # Catalog mode: prompt is a direct replacement instruction (e.g.
+        # "Change the gun to an M16. Change the release date to 1964.")
+        # Pass it verbatim with the reference image.
+        full_prompt = prompt
+        contents = [full_prompt, active_ref]
+    elif active_ref:
+        # Character mode: wrap prompt in cartoon illustration instructions
         full_prompt = (
             f"Generate a muted, desaturated cartoon illustration in 16:9 aspect ratio. "
             f"The scene shows: {prompt}. "
@@ -56,7 +82,7 @@ def _generate_single_image(
             f"Avoid bright or vibrant colors. Clean cartoon style with soft shading and clean outlines. "
             f"No text or watermarks in the image."
         )
-        contents = [full_prompt, reference_img]
+        contents = [full_prompt, active_ref]
     else:
         full_prompt = (
             f"Generate a muted, desaturated digital art illustration in 16:9 aspect ratio. "
@@ -172,6 +198,9 @@ def generate_images(
     reference_img = None
     if config.reference_image_path:
         reference_img = Image.open(config.reference_image_path)
+    reference_img_alt = None
+    if config.reference_image_alt_path:
+        reference_img_alt = Image.open(config.reference_image_alt_path)
     images_dir = output_dir / "images"
     images_dir.mkdir(parents=True, exist_ok=True)
     total = len(image_prompts)
@@ -186,6 +215,7 @@ def generate_images(
             executor.submit(
                 _generate_single_image,
                 i, prompt, images_dir, reference_img, config, client, total,
+                reference_img_alt=reference_img_alt,
             ): i
             for i, prompt in enumerate(image_prompts)
         }
