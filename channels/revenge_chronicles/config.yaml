@@ -29,8 +29,8 @@ channel:
     is advised.
 
 script:
-  min_words: 1400
-  max_words: 1700
+  min_words: 4200
+  max_words: 4800
   banned_phrases:
     - "subscribe to my channel"
     - "like and subscribe"
