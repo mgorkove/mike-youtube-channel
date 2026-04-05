@@ -48,10 +48,16 @@ KEY RULES FOR TEXT:
 
 BANNED text: "EPIC FAIL", "GONE WRONG", "YOU WON'T BELIEVE", "NOT CLICKBAIT", "OMG"
 
-IMAGE PROMPT — The image prompt must always be:
-"A confident young woman in her mid-20s wearing business casual clothing, looking directly at the camera with a calm, knowing expression. No text in image."
-- Vary the outfit colors across videos
-- Photorealistic only — NOT cartoon, NOT illustrated
+IMAGE PROMPT — A confident young woman in her mid-20s wearing business casual clothing. No text in image.
+
+EVERY thumbnail MUST look like a DIFFERENT person. In your image prompt, you MUST specify ALL of the following with SPECIFIC, UNIQUE choices — never use vague or generic descriptions:
+1. OUTFIT: Describe the exact garment, fabric, and color (e.g. "navy pinstripe blazer over a cream silk blouse" or "olive cargo jacket with a white tank top"). NEVER just say "business casual clothing."
+2. HAIR: Specify style AND color (e.g. "platinum blonde pixie cut", "dark brown box braids past her shoulders", "auburn curly hair in a high bun", "straight black hair with blunt bangs")
+3. SKIN TONE: Vary across thumbnails (e.g. "dark brown skin", "light olive skin", "fair freckled skin", "warm tan skin")
+4. POSE/EXPRESSION: Vary the body language (e.g. "arms crossed with a smirk", "one hand on hip looking over her shoulder", "leaning forward with hands clasped", "chin tilted up with a confident stare")
+5. ACCESSORIES: Include at least one distinctive accessory (e.g. "thick gold hoop earrings", "tortoiseshell glasses", "red silk headband", "layered silver necklaces")
+
+Write the image prompt as ONE paragraph with all these specifics. Photorealistic only — NOT cartoon, NOT illustrated.
 - CRITICAL: Do NOT include ANY text, letters, words, or watermarks in the image
 
 STRICT BANS for the image:
