@@ -1,60 +1,41 @@
-# Script Generation — Military Equipment Catalog
+# Script Generation — Military Vehicles & Weapons (Curiosity-Driven)
 
-You are writing the narration script for a 30-minute YouTube video that catalogs military equipment.
+You are writing the narration script for a 15-20 minute YouTube video about a specific military vehicle, weapon, or piece of equipment. The video is built around a central question, tension, or surprising fact.
 
 ## Format
 
-The video systematically covers **every item in a specific category** — for example, "Every Soviet Tank Ever Built" or "Every SIG Sauer Weapon Ever Made" or "Every Japanese Weapon Used in WW2."
+Unlike a catalog or listicle, this video tells a **story**. It explores one focused topic in depth — why something happened, how a vehicle really performs, what makes a weapon controversial, or how two rivals compare.
 
-The topic will specify the category. Your job is to write narration covering **50-60 individual items** within that category.
+The topic will specify the angle. Your job is to write compelling narration that keeps viewers watching.
 
 ## Structure
 
-1. **Opening hook** (2-3 sentences): State what category you're covering and why it matters. No fluff — get right into it.
+1. **Cold open hook** (15-30 seconds, ~50-75 words): Drop the viewer into the most surprising or dramatic moment. No introductions — start with the single most compelling fact, stat, or scenario. This is the "wait, what?" moment that stops the scroll.
 
-2. **Item-by-item catalog**: Go through each item in chronological order (by year of introduction/first production). For each item:
-   - State the full name of the item
-   - Year it entered service or was first produced
-   - 2-3 key specs (caliber, weight, range, speed, armor, crew size — whatever is most relevant)
-   - One sentence on its real-world role, combat performance, or historical significance
-   - If it had a notable flaw or reputation, mention it briefly
-   - Each item should take approximately **25-30 seconds to narrate** (~60-75 words per item)
+2. **Context setup** (1-2 minutes): Give the backstory the viewer needs. What country, what era, what problem was being solved? Set up the tension or question the rest of the video will answer.
 
-3. **Closing** (2-3 sentences): Brief wrap-up noting what defined this category overall.
+3. **Deep dive** (10-15 minutes): This is the meat. Cover:
+   - The vehicle/weapon's development history and the decisions behind it
+   - Key specs and how they compare to rivals (be specific: exact caliber, weight, range, speed, armor thickness, cost)
+   - Real combat performance or test results — what actually happened vs. what was expected
+   - The people involved: designers, generals, soldiers who used it
+   - Failures, controversies, or surprising weaknesses
+   - If it's a comparison: go back and forth between the two subjects, building tension toward a verdict
+
+4. **The reveal/conclusion** (1-2 minutes): Pay off the hook. Answer the central question directly. End with a forward-looking thought — what this means for the future of military tech.
 
 ## Voice & Tone
 
-- Third-person, past/present tense as appropriate
-- Matter-of-fact documentary narrator — informative, not dramatic
-- Short, clear sentences. No filler words.
-- Specific numbers everywhere: exact caliber, weight in kg/lbs, range in km/miles, year, production numbers
-- NO emotional commentary, no "incredible" or "amazing" or "legendary"
-- NO calls to action, no "stay tuned", no "coming up next"
-- Treat this like a reference encyclopedia being read aloud
-
-## Categorization
-
-Each item in your script is either a **gun/weapon** or a **vehicle/aircraft/vessel**. You MUST clearly categorize each item by starting each item's section with one of these markers:
-
-- `[GUN]` — for all firearms, missiles, rockets, grenades, artillery pieces, and handheld/crew-served weapons
-- `[VEHICLE]` — for all tanks, armored vehicles, aircraft, helicopters, ships, submarines, trucks, and other vehicles
-
-Example:
-```
-[GUN] The M16 rifle entered service in 1964. Chambered in 5.56x45mm NATO, it weighs 3.26 kilograms and has an effective range of 550 meters...
-
-[VEHICLE] The M1 Abrams main battle tank was introduced in 1980. Weighing 60 tons with a 1,500 horsepower gas turbine engine...
-```
-
-These markers will be stripped from the final narration — they are only used to select the correct reference image during video generation.
-
-## Item Count
-
-Target **55-60 items** total. The mix of guns vs vehicles depends on the topic:
-- If the topic is about a country's full military catalog, include both weapons and vehicles
-- If the topic is specifically about weapons/firearms, all items should be `[GUN]`
-- If the topic is specifically about vehicles/aircraft/ships, all items should be `[VEHICLE]`
+- Confident, knowledgeable narrator — like a military analyst briefing you over a drink
+- Short punchy sentences mixed with longer explanatory ones. Vary rhythm.
+- Use specific numbers everywhere: exact caliber, weight, range, speed, cost, production numbers, dates
+- Conversational but not sloppy — no "um" or "like", but contractions are fine
+- Build suspense: withhold the punchline, pose questions, use "but here's the thing..." transitions
+- Occasional dry humor is fine — never corny
+- NO emotional superlatives ("incredible", "amazing", "legendary", "game-changer")
+- NO calls to action, no "subscribe", no "let me know in the comments"
+- NO "in this video we'll explore..." — just start telling the story
 
 ## Length
 
-Target **4,500-5,000 words** total. This produces approximately 30 minutes of narration at natural speaking pace.
+Target **3,500-4,500 words** total. This produces approximately 15-20 minutes of narration at natural speaking pace.
