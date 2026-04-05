@@ -388,6 +388,13 @@ def _process_single_video(
         if manual_title:
             logger.info(f"Stage 1: Using manual title: {manual_title}")
             title = manual_title
+        elif config.emv_title_selection:
+            logger.info("Stage 1: Generating title with EMV selection...")
+            title = _retry_on_error(
+                fn=lambda: text.generate_title_with_emv(topic, config, client, existing_titles=existing_titles),
+                stage_name="title",
+                config=config,
+            )
         else:
             logger.info("Stage 1: Generating title...")
             if config.skip_quality_checks:
@@ -416,13 +423,13 @@ def _process_single_video(
         logger.info("Stage 2: Generating script...")
         if config.skip_quality_checks:
             script_text = _retry_on_error(
-                fn=lambda: text.generate_script(topic, config, client),
+                fn=lambda: text.generate_script(topic, config, client, title=title),
                 stage_name="script",
                 config=config,
             )
         else:
             script_text = _retry_with_check(
-                generate_fn=lambda: text.generate_script(topic, config, client),
+                generate_fn=lambda: text.generate_script(topic, config, client, title=title),
                 check_fn=lambda s: _check_script(s, config),
                 stage_name="script",
                 config=config,

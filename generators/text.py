@@ -304,7 +304,139 @@ Return ONLY the title text, nothing else. No quotes, no explanation."""
     return title
 
 
-def generate_script(topic: str, config: Config, client: genai.Client) -> str:
+def generate_title_with_emv(
+    topic: str,
+    config: Config,
+    client: genai.Client,
+    existing_titles: list[str] | None = None,
+    candidate_count: int = 5,
+    min_score: float = 40.0,
+    max_rounds: int = 3,
+) -> str:
+    """Generate multiple title candidates, score them via EMV, and pick the best.
+
+    Generates `candidate_count` titles per round. If no title scores above
+    `min_score`, regenerates up to `max_rounds` total. Returns the highest
+    scoring title across all rounds.
+    """
+    from emv_score import get_emv_score
+    import time
+
+    best_title = None
+    best_score = -1.0
+
+    for round_num in range(1, max_rounds + 1):
+        logger.info(f"EMV title selection round {round_num}/{max_rounds}: generating {candidate_count} candidates...")
+        candidates = _generate_title_candidates(topic, config, client, existing_titles, candidate_count)
+
+        for title in candidates:
+            try:
+                result = get_emv_score(title)
+                score = result["score"]
+                logger.info(f"  EMV {score:5.1f}% [{result['classification']:12s}] {title}")
+            except Exception:
+                logger.warning(f"  EMV scoring failed for: {title}, skipping")
+                score = 0.0
+            if score > best_score:
+                best_score = score
+                best_title = title
+            time.sleep(1.0)  # polite delay between AMI requests
+
+        if best_score >= min_score:
+            logger.info(f"EMV winner ({best_score:.1f}%): {best_title}")
+            return best_title
+
+        logger.info(f"No title above {min_score}% EMV (best so far: {best_score:.1f}%). {'Retrying...' if round_num < max_rounds else 'Using best available.'}")
+
+    logger.info(f"EMV final pick ({best_score:.1f}%): {best_title}")
+    return best_title
+
+
+def _generate_title_candidates(
+    topic: str,
+    config: Config,
+    client: genai.Client,
+    existing_titles: list[str] | None = None,
+    count: int = 5,
+) -> list[str]:
+    """Generate multiple title candidates in a single LLM call."""
+    dedup_block = ""
+    if existing_titles:
+        titles_list = "\n".join(f"- {t}" for t in existing_titles)
+        dedup_block = f"""
+
+IMPORTANT: The channel already has these video titles. Your new titles must NOT be the same as or too similar to any of them:
+{titles_list}
+"""
+
+    if config.title_generation_prompt:
+        # Adapt the channel-specific prompt to ask for multiple titles
+        base_prompt = config.title_generation_prompt.replace("[TOPIC]", topic)
+        # Replace the "Return ONLY the title" instruction with multi-title instruction
+        base_prompt = re.sub(
+            r"Return ONLY the title.*$",
+            "",
+            base_prompt,
+            flags=re.IGNORECASE | re.DOTALL,
+        ).rstrip()
+        prompt = base_prompt + f"""
+{dedup_block}
+Generate {count} different title options, each using a DIFFERENT formula/angle.
+Return them as a numbered list (1. ... 2. ... etc.), one per line. No quotes, no explanation."""
+    else:
+        prompt = f"""You are writing YouTube video titles. The titles need to GET CLICKS.
+
+Channel theme: {config.channel_theme}
+
+Topic: "{topic}"
+
+Generate {count} YouTube title options, each using a different angle or hook. Each title should:
+- Make someone scrolling YouTube STOP and click — create a strong curiosity gap
+- Contains words and phrases people actually search for on YouTube
+- Matches the channel's tone and style
+- Is a complete statement
+- Keep under 70 characters when possible
+- Use ONE or TWO words in ALL CAPS for emphasis when it feels natural
+- Do NOT reference specific years (no "in 2024", "in 2025", "in 2026") — keep titles evergreen
+{dedup_block}
+Return them as a numbered list (1. ... 2. ... etc.), one per line. No quotes, no explanation."""
+
+    response = client.models.generate_content(
+        model=config.text_model_name,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            temperature=config.text_model_temperature,
+            max_output_tokens=4096,  # thinking models need headroom for multiple titles
+        ),
+    )
+
+    # Parse numbered list from response
+    raw_lines = response.text.strip().splitlines()
+    titles = []
+    for line in raw_lines:
+        # Match "1. Title here" or "1) Title here"
+        m = re.match(r"^\s*\d+[\.\)]\s*(.+)", line)
+        if m:
+            title = _clean_title(m.group(1))
+            title = _fix_title_grammar(title)
+            if len(title) > 100:
+                title = title[:97] + "..."
+            if title:
+                titles.append(title)
+
+    if not titles:
+        # Fallback: treat entire response as a single title
+        title = _clean_title(response.text)
+        title = _fix_title_grammar(title)
+        if len(title) > 100:
+            title = title[:97] + "..."
+        titles = [title]
+
+    logger.info(f"Generated {len(titles)} title candidates")
+    return titles
+
+
+def generate_script(topic: str, config: Config, client: genai.Client, title: str | None = None) -> str:
     """Generate a YouTube script using the channel's prompt template."""
     prompt = config.script_generation_prompt.replace("[TOPIC]", topic)
 
@@ -316,6 +448,10 @@ Channel context: {config.channel_theme}
 CRITICAL RULES:
 - The script must be between {config.script_min_words} and {config.script_max_words} words.
 - Write the script as a voiceover narration — no stage directions, no [brackets], just the spoken words."""
+
+    if title:
+        prompt += f"""
+- The video title is: "{title}" — the script MUST match the angle and hook promised by this title. Build the narrative around it."""
 
     # Add banned phrases if configured
     if config.banned_phrases:

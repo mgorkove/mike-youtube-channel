@@ -3,14 +3,14 @@ video_mode: "slideshow"
 
 channel:
   theme: >
-    This channel creates encyclopedia-style catalog videos covering every
-    military vehicle and weapon ever made by a specific country, manufacturer,
-    or used in a specific war. Each video systematically goes through 50-60
-    items (tanks, fighter jets, rifles, submarines, pistols, etc.), showing
-    a clean studio-style image of each item with its name and release date,
-    while the narrator provides key specs, history, and real-world performance.
-    The format is similar to "Every Soviet Submarine Ever Built" or
-    "Every SIG Sauer Weapon Ever Made."
+    This channel creates curiosity-driven deep-dive videos about military
+    vehicles, weapons, and equipment. Each video explores one focused topic
+    built around a surprising fact, counterintuitive question, or head-to-head
+    comparison — for example "Why the US Military Won't Use the World's Best
+    Rifle" or "This Forgotten Soviet Tank Could Still Beat an Abrams." The
+    format is story-driven, not listicle — it builds tension, reveals
+    surprising details, and pays off a central hook. Think military analyst
+    meets storyteller.
   required_keywords:
     - military
     - weapons
@@ -27,8 +27,8 @@ channel:
     or weapons manufacturer.
 
 script:
-  min_words: 4500
-  max_words: 5000
+  min_words: 3500
+  max_words: 4500
   banned_phrases:
     - "subscribe to my channel"
     - "like and subscribe"
@@ -52,8 +52,6 @@ tts:
 
 image_gen:
   model: "gemini-2.5-flash-image"
-  reference_image: "channels/rank_recon/assets/gun_reference.png"
-  reference_image_alt: "channels/rank_recon/assets/vehicle_reference.png"
   seconds_per_image: 30
   image_width: 1920
   image_height: 1080
@@ -82,12 +80,12 @@ youtube:
     - military weapons
     - tanks
     - fighter jets
-    - guns
-    - firearms
     - military history
+    - military technology
+    - defense
+    - military comparison
     - weapons explained
-    - every weapon ever made
-    - military equipment
+    - military analysis
 
 retry:
   max_attempts: 3
@@ -100,6 +98,7 @@ scheduling:
     - [8, 0]
     - [18, 0]
 
+emv_title_selection: true
 max_parallel_videos: 1
 cleanup_after_upload: false
 

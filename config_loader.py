@@ -129,6 +129,9 @@ class Config:
     # Skip quality checks (title length, banned phrases, contrast, audio, image dimensions)
     skip_quality_checks: bool = False
 
+    # EMV title selection: generate multiple titles and pick the highest-scoring one
+    emv_title_selection: bool = False
+
     # Skip shorts generation and upload
     skip_shorts: bool = False
 
@@ -274,6 +277,7 @@ def load_config(config_path: str = "config.yaml") -> Config:
         thumbnail_story_badge=raw.get("thumbnail", {}).get("story_badge", False),
         background_image_path=bg_image,
         shorts_background_image_path=shorts_bg_image,
+        emv_title_selection=raw.get("emv_title_selection", False),
         skip_quality_checks=raw.get("skip_quality_checks", False),
         skip_shorts=raw.get("skip_shorts", False),
         schedule_same_day=raw.get("schedule_same_day", False),
