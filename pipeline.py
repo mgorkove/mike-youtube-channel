@@ -422,8 +422,9 @@ def _process_single_video(
     else:
         logger.info("Stage 2: Generating script...")
         if config.skip_quality_checks:
-            script_text = _retry_on_error(
-                fn=lambda: text.generate_script(topic, config, client, title=title),
+            script_text = _retry_with_check(
+                generate_fn=lambda: text.generate_script(topic, config, client, title=title),
+                check_fn=lambda s: _check_script_length(s, config),
                 stage_name="script",
                 config=config,
             )
@@ -1099,8 +1100,26 @@ def _retry_on_error(fn, stage_name: str, config: Config):
 # ---------------------------------------------------------------------------
 
 
+def _check_script_length(script_text: str, config: Config) -> checks.CheckResult:
+    """Check script meets minimum word count (used even when quality checks are skipped)."""
+    word_count = len(script_text.split())
+    if word_count < config.script_min_words:
+        return checks.CheckResult(
+            False,
+            f"Script too short: {word_count} words (min {config.script_min_words})",
+        )
+    return checks.CheckResult(True, f"Script length OK ({word_count} words)")
+
+
 def _check_script(script_text: str, config: Config) -> checks.CheckResult:
     """Run all script quality checks, return first failure or overall pass."""
+    # Word count check — always enforced
+    word_count = len(script_text.split())
+    if word_count < config.script_min_words:
+        return checks.CheckResult(
+            False,
+            f"Script too short: {word_count} words (min {config.script_min_words})",
+        )
     bp = checks.check_banned_phrases(script_text, config.banned_phrases)
     if not bp.passed:
         return bp

@@ -40,7 +40,7 @@ script:
 text_model:
   name: "gemini-3-flash-preview"
   temperature: 0.9
-  max_output_tokens: 16384
+  max_output_tokens: 65536
 
 tts:
   model: "gemini-2.5-flash-preview-tts"
