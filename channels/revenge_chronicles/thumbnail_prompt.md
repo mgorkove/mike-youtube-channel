@@ -48,12 +48,12 @@ KEY RULES FOR TEXT:
 
 BANNED text: "EPIC FAIL", "GONE WRONG", "YOU WON'T BELIEVE", "NOT CLICKBAIT", "OMG"
 
-IMAGE PROMPT — A confident young woman in her mid-20s wearing business casual clothing. No text in image.
+IMAGE PROMPT — A confident young white woman in her mid-20s wearing business casual clothing. No text in image.
 
-EVERY thumbnail MUST look like a DIFFERENT person. In your image prompt, you MUST specify ALL of the following with SPECIFIC, UNIQUE choices — never use vague or generic descriptions:
+EVERY thumbnail MUST look like a DIFFERENT person, but ALWAYS a white woman. In your image prompt, you MUST specify ALL of the following with SPECIFIC, UNIQUE choices — never use vague or generic descriptions:
 1. OUTFIT: Describe the exact garment, fabric, and color (e.g. "navy pinstripe blazer over a cream silk blouse" or "olive cargo jacket with a white tank top"). NEVER just say "business casual clothing."
-2. HAIR: Specify style AND color (e.g. "platinum blonde pixie cut", "dark brown box braids past her shoulders", "auburn curly hair in a high bun", "straight black hair with blunt bangs")
-3. SKIN TONE: Vary across thumbnails (e.g. "dark brown skin", "light olive skin", "fair freckled skin", "warm tan skin")
+2. HAIR: Specify style AND color — keep within natural Caucasian hair colors (e.g. "platinum blonde pixie cut", "honey blonde waves past her shoulders", "auburn curly hair in a high bun", "straight chestnut brown hair with blunt bangs", "strawberry blonde long layers", "dark brown hair in a sleek low ponytail")
+3. SKIN TONE: ALWAYS white/Caucasian — vary the specific tone (e.g. "fair freckled skin", "pale porcelain skin", "light skin with a subtle tan", "rosy fair skin", "ivory skin with pink undertones")
 4. POSE/EXPRESSION: Vary the body language (e.g. "arms crossed with a smirk", "one hand on hip looking over her shoulder", "leaning forward with hands clasped", "chin tilted up with a confident stare")
 5. ACCESSORIES: Include at least one distinctive accessory (e.g. "thick gold hoop earrings", "tortoiseshell glasses", "red silk headband", "layered silver necklaces")
 
