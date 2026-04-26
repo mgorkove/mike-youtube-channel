@@ -82,16 +82,16 @@ else
 fi
 
 # ---------- 4. Instance schedule ----------
-echo "4. Creating instance schedule (daily 8am ET start, midnight ET safety-stop)..."
+echo "4. Creating instance schedule (daily 8am ET start, 1am ET safety-stop)..."
 SCHEDULE_NAME="pipeline-schedule-revenge-chronicles"
 
 gcloud compute resource-policies create instance-schedule "$SCHEDULE_NAME" \
     --project="$PROJECT" \
     --region="$REGION" \
     --vm-start-schedule="0 8 * * *" \
-    --vm-stop-schedule="0 0 * * *" \
+    --vm-stop-schedule="0 1 * * *" \
     --timezone="America/New_York" \
-    --description="Daily 8am ET start, midnight ET safety-stop (revenge_chronicles)" \
+    --description="Daily 8am ET start, 1am ET safety-stop (revenge_chronicles)" \
     2>/dev/null || echo "  $SCHEDULE_NAME schedule already exists"
 
 gcloud compute instances add-resource-policies "$VM_NAME" \
