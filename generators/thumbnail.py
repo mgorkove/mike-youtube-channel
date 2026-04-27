@@ -43,6 +43,8 @@ COLOR_MAP = {
 
 import re
 _COLOR_TAG_RE = re.compile(r"^\[([a-z+\s]+)\]\s*", re.IGNORECASE)
+# Matches any color tag, including inline ones (not just at start of segment)
+_INLINE_COLOR_TAG_RE = re.compile(r"\[([a-z+\s]+)\]", re.IGNORECASE)
 
 # Portrait dimensions for the woman (narrow, will be pasted onto right side)
 PORTRAIT_WIDTH = 512
@@ -229,6 +231,96 @@ def _parse_segment_colors(segment: str) -> tuple[str, list[tuple]]:
     return text, colors
 
 
+def _parse_segment_runs(segment: str, default_color: tuple) -> list[tuple[str, tuple]]:
+    """Parse a segment with inline color tags into a list of (text, color) runs.
+
+    A segment like 'MY MOM GAVE THE [pink]$4.8M [yellow]BUSINESS [white]DAD SAID:'
+    becomes:
+      [('MY MOM GAVE THE ', white), ('$4.8M ', pink),
+       ('BUSINESS ', yellow), ('DAD SAID:', white)]
+
+    Text before the first tag uses default_color. Unknown tag names are skipped
+    (the text after them keeps the previous color).
+    """
+    runs: list[tuple[str, tuple]] = []
+    current_color = default_color
+    pos = 0
+    for m in _INLINE_COLOR_TAG_RE.finditer(segment):
+        if m.start() > pos:
+            runs.append((segment[pos:m.start()], current_color))
+        tag = m.group(1).lower().strip()
+        # Only switch color if it's a single recognized color (no '+').
+        # Dual-color tags are handled at the segment level, not inline.
+        if "+" not in tag and tag in COLOR_MAP:
+            current_color = COLOR_MAP[tag]
+        pos = m.end()
+    if pos < len(segment):
+        runs.append((segment[pos:], current_color))
+    # Drop empty runs
+    return [(t, c) for t, c in runs if t]
+
+
+def _wrap_runs(
+    runs: list[tuple[str, tuple]],
+    font,
+    max_width: int,
+    draw: "ImageDraw.Draw",
+    stroke_width: int,
+) -> list[list[tuple[str, tuple]]]:
+    """Word-wrap a list of (text, color) runs into a list of lines.
+
+    Each output line is itself a list of (text, color) runs. Word boundaries
+    are respected — a single word is never split across colors (the LLM should
+    place tags on word boundaries).
+    """
+    # Tokenize runs into (word, color) tokens, preserving spaces between words
+    tokens: list[tuple[str, tuple]] = []
+    for text, color in runs:
+        # Split keeping non-space words; spaces are absorbed into separators
+        for word in text.split():
+            tokens.append((word, color))
+
+    if not tokens:
+        return []
+
+    lines: list[list[tuple[str, tuple]]] = []
+    current_line: list[tuple[str, tuple]] = [tokens[0]]
+    current_text = tokens[0][0]
+
+    for word, color in tokens[1:]:
+        candidate = current_text + " " + word
+        bbox = draw.textbbox((0, 0), candidate, font=font, stroke_width=stroke_width)
+        if bbox[2] - bbox[0] <= max_width:
+            current_line.append((word, color))
+            current_text = candidate
+        else:
+            lines.append(current_line)
+            current_line = [(word, color)]
+            current_text = word
+    lines.append(current_line)
+    return lines
+
+
+def _draw_runs_line(
+    draw: "ImageDraw.Draw",
+    x: int,
+    y: int,
+    line_runs: list[tuple[str, tuple]],
+    font,
+    outline_width: int,
+):
+    """Draw a single line composed of (word, color) runs, advancing x for each word."""
+    cursor_x = x
+    for i, (word, color) in enumerate(line_runs):
+        text = word if i == 0 else " " + word
+        draw.text(
+            (cursor_x, y), text, font=font, fill=color,
+            stroke_width=outline_width, stroke_fill=COLOR_BLACK,
+        )
+        bbox = draw.textbbox((0, 0), text, font=font, stroke_width=outline_width)
+        cursor_x += bbox[2] - bbox[0]
+
+
 def _draw_dual_color_line(
     draw: ImageDraw.Draw,
     x: int,
@@ -281,14 +373,33 @@ def _overlay_text(
     if not segments:
         return img
 
-    # Parse color tags from each segment
-    parsed_segments = []  # list of (text, [colors])
+    # Parse each segment. We support three modes per segment:
+    #   1. Inline-tag mode: segment contains 2+ color tags or has a tag mid-text.
+    #      We parse it into a list of (word, color) runs that flow inline.
+    #   2. Dual-color segment: starts with [c1+c2]TEXT (no inline tags after).
+    #      Renders with first half of words in c1, second half in c2.
+    #   3. Single-color segment: starts with [c]TEXT or has no tag (-> white).
+    parsed_segments = []  # list of dicts: {"mode": ..., ...}
     has_color_tags = False
     for seg in segments:
-        text, colors = _parse_segment_colors(seg)
-        if colors:
+        # Count inline tags
+        all_tags = list(_INLINE_COLOR_TAG_RE.finditer(seg))
+        leading_text, leading_colors = _parse_segment_colors(seg)
+        # Determine: inline mode if there's a tag NOT at the very start, or 2+ tags
+        starts_with_tag = bool(all_tags) and all_tags[0].start() == 0
+        inline_mode = (len(all_tags) >= 2) or (all_tags and not starts_with_tag)
+        if inline_mode:
             has_color_tags = True
-        parsed_segments.append((text, colors))
+            runs = _parse_segment_runs(seg, default_color=COLOR_WHITE)
+            parsed_segments.append({"mode": "runs", "runs": runs})
+        else:
+            if leading_colors:
+                has_color_tags = True
+            parsed_segments.append({
+                "mode": "single",
+                "text": leading_text,
+                "colors": leading_colors,
+            })
 
     img = img.copy()
     draw = ImageDraw.Draw(img)
@@ -305,8 +416,9 @@ def _overlay_text(
     font_size = 200
     min_font_size = 24
     font = None
-    # Each entry: (line_text, [colors_from_parent_segment])
-    wrapped_with_colors: list[tuple[str, list[tuple]]] = []
+    # Each entry is a dict: {"mode": "single"|"runs", "text"/"runs": ..., "colors": ...}
+    # representing one wrapped line.
+    wrapped_lines: list[dict] = []
 
     while font_size >= min_font_size:
         try:
@@ -317,14 +429,27 @@ def _overlay_text(
             break
 
         stroke = max(4, font_size // 10)
-        wrapped_with_colors = []
-        for text, colors in parsed_segments:
-            for wline in _word_wrap(text, font, text_area_width, draw, stroke):
-                wrapped_with_colors.append((wline, colors))
+        wrapped_lines = []
+        for seg in parsed_segments:
+            if seg["mode"] == "runs":
+                for line_runs in _wrap_runs(seg["runs"], font, text_area_width, draw, stroke):
+                    line_text = " ".join(w for w, _ in line_runs)
+                    wrapped_lines.append({
+                        "mode": "runs",
+                        "runs": line_runs,
+                        "text": line_text,
+                    })
+            else:
+                for wline in _word_wrap(seg["text"], font, text_area_width, draw, stroke):
+                    wrapped_lines.append({
+                        "mode": "single",
+                        "text": wline,
+                        "colors": seg["colors"],
+                    })
 
         total_height = 0
-        for line, _ in wrapped_with_colors:
-            bbox = draw.textbbox((0, 0), line, font=font, stroke_width=stroke)
+        for line in wrapped_lines:
+            bbox = draw.textbbox((0, 0), line["text"], font=font, stroke_width=stroke)
             total_height += bbox[3] - bbox[1]
 
         if total_height <= available_height:
@@ -337,14 +462,14 @@ def _overlay_text(
     # Calculate line heights
     outline_width = max(4, font_size // 10)
     line_heights = []
-    for line, _ in wrapped_with_colors:
-        bbox = draw.textbbox((0, 0), line, font=font, stroke_width=outline_width)
+    for line in wrapped_lines:
+        bbox = draw.textbbox((0, 0), line["text"], font=font, stroke_width=outline_width)
         line_heights.append(bbox[3] - bbox[1])
     total_text_height = sum(line_heights)
 
     # Distribute extra vertical space between lines
     max_gap = int(font_size * 0.25)
-    num_lines = len(wrapped_with_colors)
+    num_lines = len(wrapped_lines)
     if num_lines > 1:
         line_gap = min(
             (available_height - total_text_height) / (num_lines - 1),
@@ -359,24 +484,27 @@ def _overlay_text(
 
     # Draw each line
     y = y_start
-    for i, ((line, colors), lh) in enumerate(zip(wrapped_with_colors, line_heights)):
-        if has_color_tags and colors:
-            if len(colors) == 1:
+    for i, (line, lh) in enumerate(zip(wrapped_lines, line_heights)):
+        if line["mode"] == "runs":
+            # Inline-colored line: draw each (word, color) run sequentially
+            _draw_runs_line(draw, margin_left, y, line["runs"], font, outline_width)
+        elif has_color_tags and line["colors"]:
+            if len(line["colors"]) == 1:
                 # Single color tag
                 draw.text(
-                    (margin_left, y), line, font=font, fill=colors[0],
+                    (margin_left, y), line["text"], font=font, fill=line["colors"][0],
                     stroke_width=outline_width, stroke_fill=COLOR_BLACK,
                 )
             else:
                 # Dual color: first half of words in color1, second half in color2
                 _draw_dual_color_line(
-                    draw, margin_left, y, line, font,
-                    colors[0], colors[1], outline_width,
+                    draw, margin_left, y, line["text"], font,
+                    line["colors"][0], line["colors"][1], outline_width,
                 )
         elif has_color_tags:
             # Segment had no tag — default to white
             draw.text(
-                (margin_left, y), line, font=font, fill=COLOR_WHITE,
+                (margin_left, y), line["text"], font=font, fill=COLOR_WHITE,
                 stroke_width=outline_width, stroke_fill=COLOR_BLACK,
             )
         else:
@@ -386,7 +514,7 @@ def _overlay_text(
             else:
                 color = COLOR_WHITE
             draw.text(
-                (margin_left, y), line, font=font, fill=color,
+                (margin_left, y), line["text"], font=font, fill=color,
                 stroke_width=outline_width, stroke_fill=COLOR_BLACK,
             )
         y += lh + int(line_gap)
