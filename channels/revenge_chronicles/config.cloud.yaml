@@ -63,6 +63,9 @@ thumbnail:
   height: 720
   min_contrast_ratio: 3.0
   text_overlay: true
+  background_style: "solid_black"
+  portrait_width: 448
+  story_badge: false
 
 video:
   fps: 24

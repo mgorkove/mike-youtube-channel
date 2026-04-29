@@ -25,10 +25,10 @@ from config_loader import Config
 logger = logging.getLogger(__name__)
 
 # Colors for text overlay
-COLOR_ORANGE = (255, 165, 0)
+COLOR_ORANGE = (255, 110, 6)
 COLOR_WHITE = (255, 255, 255)
 COLOR_BLACK = (0, 0, 0)
-COLOR_YELLOW = (255, 215, 0)
+COLOR_YELLOW = (247, 255, 6)
 COLOR_PINK = (255, 105, 180)
 COLOR_RED = (255, 40, 40)
 
@@ -102,6 +102,11 @@ def _create_bokeh_background(width: int, height: int) -> Image.Image:
     img = img.convert("RGBA")
     img = Image.alpha_composite(img, bokeh_layer)
     return img.convert("RGB")
+
+
+def _create_solid_black_background(width: int, height: int) -> Image.Image:
+    """Pure solid black background — no glow, no bokeh, no gradient."""
+    return Image.new("RGB", (width, height), (0, 0, 0))
 
 
 def _create_dark_gradient_background(width: int, height: int) -> Image.Image:
@@ -269,14 +274,14 @@ def _wrap_runs(
 ) -> list[list[tuple[str, tuple]]]:
     """Word-wrap a list of (text, color) runs into a list of lines.
 
-    Each output line is itself a list of (text, color) runs. Word boundaries
-    are respected — a single word is never split across colors (the LLM should
-    place tags on word boundaries).
+    Each output line is a list of (text, color) runs that all share the SAME
+    color. A color change ALWAYS forces a new line — two colors will never
+    appear on the same wrapped line. Within a single-color run, words wrap
+    by width as usual.
     """
-    # Tokenize runs into (word, color) tokens, preserving spaces between words
+    # Tokenize runs into (word, color) tokens
     tokens: list[tuple[str, tuple]] = []
     for text, color in runs:
-        # Split keeping non-space words; spaces are absorbed into separators
         for word in text.split():
             tokens.append((word, color))
 
@@ -286,8 +291,15 @@ def _wrap_runs(
     lines: list[list[tuple[str, tuple]]] = []
     current_line: list[tuple[str, tuple]] = [tokens[0]]
     current_text = tokens[0][0]
+    current_color = tokens[0][1]
 
     for word, color in tokens[1:]:
+        if color != current_color:
+            lines.append(current_line)
+            current_line = [(word, color)]
+            current_text = word
+            current_color = color
+            continue
         candidate = current_text + " " + word
         bbox = draw.textbbox((0, 0), candidate, font=font, stroke_width=stroke_width)
         if bbox[2] - bbox[0] <= max_width:
@@ -358,6 +370,7 @@ def _overlay_text(
     img: Image.Image,
     overlay_text: str,
     font_path: str,
+    text_area_right_x: int | None = None,
 ) -> Image.Image:
     """Render multi-line overlay text onto the left side of a thumbnail.
 
@@ -405,9 +418,14 @@ def _overlay_text(
     draw = ImageDraw.Draw(img)
     width, height = img.size
 
-    # Target: text fills the left ~72% of the frame with tight margins
-    text_area_width = int(width * 0.72)
+    # Target: text fills the left side with tight margins. If a portrait
+    # boundary is given, text must end before it (with a small gap).
     margin_left = int(width * 0.03)
+    if text_area_right_x is not None:
+        gap = int(width * 0.02)
+        text_area_width = max(100, text_area_right_x - margin_left - gap)
+    else:
+        text_area_width = int(width * 0.72)
     margin_top = int(height * 0.04)
     margin_bottom = int(height * 0.04)
     available_height = height - margin_top - margin_bottom
@@ -695,6 +713,8 @@ def _generate_composite_thumbnail(
     logger.info("Creating background...")
     if config.thumbnail_background_style == "gradient":
         background = _create_dark_gradient_background(thumb_w, thumb_h)
+    elif config.thumbnail_background_style == "solid_black":
+        background = _create_solid_black_background(thumb_w, thumb_h)
     else:
         background = _create_bokeh_background(thumb_w, thumb_h)
 
@@ -707,6 +727,7 @@ def _generate_composite_thumbnail(
         logger.info("Overlaying text...")
         background = _overlay_text(
             background, overlay_text, config.thumbnail_font_path,
+            text_area_right_x=paste_x,
         )
 
     # --- Story badge ---

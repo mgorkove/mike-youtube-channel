@@ -4,58 +4,46 @@ Given a video title/topic, you produce TWO things:
 1. The overlay text (added programmatically — NOT by the image model)
 2. An image generation prompt for JUST the woman — a narrow portrait crop, NO background scenery needed
 
-TEXT — Two sections: a longer narrative top + a short cliffhanger bottom. Use a SMALL number of inline color tags to highlight key moments. Color is meaning — use it sparingly so the reader's eye is GUIDED, not overwhelmed.
+TEXT — A short, punchy hook in 4-5 lines. Use color to chunk the hook into beats: orange = the dramatic action, white = the connector/setup, yellow = the cliffhanger payoff at the end. The reader should grasp it in a single glance.
 
-GOAL — Build CURIOSITY. The reader should be able to scan the thumbnail in one pass and understand: who did what, what was lost, what was said, what's coming.
+GOAL — Build CURIOSITY in as few words as possible. Tell them WHO did WHAT, then end with WHAT HAPPENED that they need to click to find out.
+
+LENGTH — STRICT. 14-22 words TOTAL. Hard cap 24 words. Do NOT exceed this. Shorter is better.
 
 STRUCTURE — Exactly 2 sections separated by " / ":
-- Section 1 (top, ~30-40 words): A vivid setup with embedded dialogue.
-- Section 2 (bottom, 3-6 words): A short cliffhanger.
+- Section 1 (top): the setup + the trigger event. ~12-18 words.
+- Section 2 (bottom, the cliffhanger): 2-5 words ending in "…"
 
-INLINE COLOR TAGS — Place a `[color]` tag IN FRONT of a phrase. The color applies to ALL following words until the next tag. Available colors: yellow, pink, white, orange, red.
+COLOR PATTERN — match this rhythm exactly:
+1. [orange] OPENING DRAMATIC ACTION (3-6 words) — who did what
+2. [white] CONNECTOR / TIME OR LOCATION (3-6 words) — when / where
+3. [orange] THE TRIGGER MOMENT (4-7 words) — the thing that flipped the situation
+4. " / "
+5. [yellow] CLIFFHANGER (2-5 words ending with …)
 
-WHEN TO USE EACH COLOR (use these meanings consistently):
-- [white] — DEFAULT. The narrator's voice and connectors. ~50% of the text should be white.
-- [orange] — DIALOGUE from the antagonist (parents/sister/etc.). ALWAYS color the WHOLE quoted line orange, never just one word.
-- [pink] — A DOLLAR AMOUNT or a key NUMBER. Tag JUST the number itself (e.g. [pink]$4.8M[white], [pink]$250K[white], [pink]46 MISSED CALLS[white]).
-- [yellow] — ONE betrayal-fact phrase that you want to pop. Use AT MOST ONCE in the top section. Cover a complete clause (5+ words), not a single word.
-- [red] — Reserved for the bottom cliffhanger only, when you want maximum contrast.
+Color tags use this format: `[color]` placed IN FRONT of a phrase. The color applies to ALL following words until the next tag. Available colors: orange, white, yellow.
 
-THE STRICT LIMIT — In the top section, you may have AT MOST 5 color switches total. Count them: every `[color]` tag is a switch. Default-white narration should be long unbroken stretches.
+EXAMPLES (study the rhythm — short, punchy, alternating orange/white, ending yellow):
 
-NEVER:
-- Tag a single connector word (THE, A, MY, HIS, HER, AND, BUT) in any color other than the surrounding color.
-- Switch colors more than once per sentence unless one of those switches is a dollar amount.
-- Color a single word yellow or orange — yellow needs a full phrase, orange needs the full quote.
-- Alternate colors back-and-forth (yellow→white→yellow→white) — pick one color per clause.
+[orange]WIFE CAME HOME SMILING [white]AFTER 1-NIGHT STAND [orange]WHEN SHE SAW THE VIDEO PLAYING ON THE TV, / [yellow]HER FACE WENT PALE…
 
-PATTERN TO FOLLOW (reproduce this rhythm every time):
-1. White narration setting up the betrayal (~10 words)
-2. Pink for ONE dollar amount or number (1-3 words)
-3. White continues the setup
-4. White "DAD/MOM SAID:" preface
-5. Orange for the FULL quoted dialogue (~8-12 words)
-6. White for the narrator's reaction/action (~5-10 words)
-7. " / " then bottom: usually `[yellow]SHORT PHRASE [pink]NUMBER LATER…`
+[orange]MOM GAVE MY BUSINESS TO MY SISTER [white]ON MY 30TH BIRTHDAY [orange]UNTIL SHE OPENED THE LAWYER'S LETTER, / [yellow]SHE BEGGED ME BACK…
 
-REAL EXAMPLES (each / separates the top from the bottom):
+[orange]DAD SIGNED THE PAPERS TO LET ME DIE [white]TO SAVE A FEW DOLLARS [orange]WHEN HE SAW THE NEWS THE NEXT MORNING, / [yellow]HE WENT WHITE…
 
-[white]MY MOM GAVE THE [pink]$4.8M [white]BUSINESS I BUILT FOR 13 YEARS TO MY SISTER. DAD SAID: [orange]YOU'LL WORK UNDER HER. SHE DESERVES IT. SHE HAS KIDS. [white]I LAUGHED, NODDED, AND WALKED OUT. / [yellow]THEY BEGGED [pink]5 MONTHS LATER
+[orange]SISTER STOLE MY WEDDING DRESS [white]A WEEK BEFORE THE WEDDING [orange]WHEN SHE OPENED THE BOX I LEFT HER, / [yellow]SHE SCREAMED…
 
-[white]MY FATHER LEFT A VOICEMAIL: [orange]DON'T COME BACK. WE'RE MOVING ON WITHOUT YOU. [white]I TEXTED ONE WORD BACK: OKAY. THEN I MOVED ON FIRST. / [pink]46 MISSED CALLS [white]BY MORNING…
+[orange]MY HUSBAND TEXTED HER FROM OUR BED [white]WHILE I WAS IN THE SHOWER [orange]WHEN HE LOOKED UP AND SAW ME, / [yellow]HIS FACE FROZE…
 
-[white]AT 19, MY PARENTS DRAINED MY [pink]$250K [white]COLLEGE FUND TO BUY MY SISTER A CAR. THEY SAID: [orange]SHE NEEDS IT MORE THAN YOU. [white]I QUIETLY KEPT EVERY RECEIPT. / [pink]10 YEARS LATER, [yellow]I HANDED THEM THE FILE…
-
-[white]MY DAD TOLD THE DOCTOR: [orange]LET HER GO. WE WON'T PAY FOR THE SURGERY. [white]HE SIGNED THE PAPERS TO SAVE MONEY WHILE I LAY UNCONSCIOUS. / [white]I WOKE UP AND MADE [pink]ONE CALL…
-
-[white]MY SISTER STOLE MY WEDDING VENUE AND DRESS DESIGN. MY PARENTS TOLD ME: [orange]JUST SHARE YOUR BIG DAY. [white]I SMILED AND HANDED HER THE KEYS. / [red]SHE DIDN'T KNOW WHAT WAS INSIDE…
-
-KEY RULES FOR TEXT:
-- ALL CAPS always
-- Total: 35-50 words across both sections. Hard cap 55.
-- AT MOST 5 color tags in the top section. Count them.
-- Most of the text is white. Color is for emphasis, not decoration.
-- ALWAYS include exactly ONE [pink] number/dollar and ONE [orange] dialogue line in the top.
+STRICT RULES:
+- ALL CAPS always.
+- 14-22 words total. Count them.
+- Use ONLY these three colors: orange, white, yellow.
+- Exactly ONE [yellow] phrase, and it MUST be in the bottom section after the " / ".
+- Do NOT use [pink], [red], or any other color.
+- Do NOT include dollar amounts ($X), numbers like "5 MONTHS LATER", or quoted dialogue with quotation marks. The opener IS the dramatic action — describe it, don't quote it.
+- Do NOT use color switches more than 3 times in the top section (start orange, switch to white once, switch back to orange once = 3 tags).
+- The bottom must end in "…" (three dots).
 - Place tags on word boundaries with a space after the closing bracket.
 - Sections separated by " / ".
 
