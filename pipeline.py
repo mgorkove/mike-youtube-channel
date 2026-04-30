@@ -23,6 +23,7 @@ from pathlib import Path
 
 from google import genai
 
+from assembly import satisfying_shorts as satisfying_shorts_assembly
 from assembly import shorts, slideshow, static_image, stock_video, video
 from config_loader import Config
 from generators import images, speech, stock_footage, subtitles, text, thumbnail
@@ -379,6 +380,16 @@ def _process_single_video(
     ckpt = _Checkpoint(output_dir)
     # Persist identity info so resume() can reload it later.
     ckpt.mark_done("_init", topic=topic, manual_title=manual_title, publish_at=publish_at)
+
+    # --- Early branch for satisfying_shorts mode ---
+    # This mode skips script/voiceover/subtitles entirely (music-only Short),
+    # so the standard stage 1–8 flow doesn't apply.
+    if config.video_mode == "satisfying_shorts":
+        return _process_satisfying_short(
+            topic, config, client, ckpt, output_dir,
+            manual_title=manual_title, publish_at=publish_at,
+            existing_titles=existing_titles, upload_budget=upload_budget,
+        )
 
     # --- Stage 1: Title ---
     if ckpt.is_done("title"):
@@ -1001,6 +1012,193 @@ def _stages_5_to_8_stock_footage(
         logger.info("Stock footage video assembled successfully")
 
     return clip_paths, len(clip_paths), video_path, thumb_path
+
+
+# ---------------------------------------------------------------------------
+# satisfying_shorts mode (music-only photo compilation Shorts)
+# ---------------------------------------------------------------------------
+
+
+def _process_satisfying_short(
+    topic: str,
+    config: Config,
+    client: genai.Client,
+    ckpt: "_Checkpoint",
+    output_dir: Path,
+    manual_title: str | None,
+    publish_at: str | None,
+    existing_titles: list[str] | None,
+    upload_budget: "_UploadBudget | None",
+) -> VideoResult:
+    """Pipeline for the satisfying_shorts video_mode.
+
+    Stages: title → description → tags → image prompts → images →
+    thumbnail → vertical-short assembly → upload.
+    """
+    quality_results: dict = {}
+
+    # --- Stage 1: Title ---
+    title_path = output_dir / "title.txt"
+    if ckpt.is_done("title") and title_path.exists():
+        title = title_path.read_text(encoding="utf-8")
+        logger.info(f"Stage 1: Loaded cached title: {title}")
+    elif manual_title:
+        title = manual_title
+        _save_artifact(title_path, title)
+        ckpt.mark_done("title")
+    else:
+        logger.info("Stage 1: Generating title...")
+        title = _retry_on_error(
+            fn=lambda: text.generate_title(topic, config, client, existing_titles=existing_titles),
+            stage_name="title",
+            config=config,
+        )
+        _save_artifact(title_path, title)
+        ckpt.mark_done("title")
+        logger.info(f"Title: {title}")
+
+    # --- Stage 2: Description ---
+    desc_path = output_dir / "description.txt"
+    if ckpt.is_done("description") and desc_path.exists():
+        description = desc_path.read_text(encoding="utf-8")
+    else:
+        logger.info("Stage 2: Generating description...")
+        description = _retry_on_error(
+            fn=lambda: text.generate_description(topic, title, "", config, client),
+            stage_name="description",
+            config=config,
+        )
+        description = _ensure_description_footer(description, config)
+        _save_artifact(desc_path, description)
+        ckpt.mark_done("description")
+
+    # --- Stage 3: Tags ---
+    tags_path = output_dir / "tags.json"
+    if ckpt.is_done("tags") and tags_path.exists():
+        video_tags = json.loads(tags_path.read_text(encoding="utf-8"))
+    else:
+        logger.info("Stage 3: Generating tags...")
+        try:
+            video_tags = _retry_on_error(
+                fn=lambda: text.generate_tags(topic, title, config, client),
+                stage_name="tags",
+                config=config,
+            )
+        except Exception as e:
+            logger.warning(f"Tag generation failed, continuing without per-video tags: {e}")
+            video_tags = []
+        _save_artifact(tags_path, json.dumps(video_tags, indent=2))
+        ckpt.mark_done("tags")
+
+    # --- Stage 4: Image prompts ---
+    prompts_path = output_dir / "image_prompts.json"
+    num_images = config.satisfying_num_images
+    if ckpt.is_done("image_prompts") and prompts_path.exists():
+        image_prompts = json.loads(prompts_path.read_text(encoding="utf-8"))
+        logger.info(f"Stage 4: Loaded {len(image_prompts)} cached image prompts")
+    else:
+        logger.info(f"Stage 4: Generating {num_images} satisfying-photo prompts...")
+        image_prompts = _retry_on_error(
+            fn=lambda: text.extract_satisfying_photo_prompts(
+                topic, num_images, config, client
+            ),
+            stage_name="image_prompts",
+            config=config,
+        )
+        _save_artifact(prompts_path, json.dumps(image_prompts, indent=2))
+        ckpt.mark_done("image_prompts")
+
+    # --- Stage 5: Images ---
+    if ckpt.is_done("images"):
+        image_paths = _load_image_paths(output_dir, len(image_prompts))
+        logger.info(f"Stage 5: Loaded {len(image_paths)} cached images")
+    else:
+        logger.info(f"Stage 5: Generating {len(image_prompts)} images at {config.image_width}x{config.image_height}...")
+        image_paths = _retry_on_error(
+            fn=lambda: images.generate_images(image_prompts, output_dir, config, client),
+            stage_name="image_generation",
+            config=config,
+        )
+        ckpt.mark_done("images")
+
+    # --- Stage 6: Thumbnail (uses first photo) ---
+    thumb_path = output_dir / "thumbnail.png"
+    if ckpt.is_done("thumbnail") and thumb_path.exists():
+        logger.info("Stage 6: Loaded cached thumbnail")
+    else:
+        logger.info("Stage 6: Building thumbnail from first photo...")
+        thumb_path = satisfying_shorts_assembly.make_thumbnail_from_photo(
+            image_paths, output_dir, config
+        )
+        ckpt.mark_done("thumbnail")
+
+    # --- Stage 7: Assemble vertical short ---
+    video_path = output_dir / "video.mp4"
+    if ckpt.is_done("video") and video_path.exists():
+        logger.info("Stage 7: Loaded cached video")
+    else:
+        logger.info("Stage 7: Assembling 60s vertical short...")
+        video_path = satisfying_shorts_assembly.assemble_satisfying_short(
+            image_paths, output_dir, config
+        )
+        ckpt.mark_done("video")
+
+    # --- Stage 8: Upload ---
+    video_id = None
+    video_url = None
+    audio_duration = float(config.satisfying_intro_seconds + config.satisfying_seconds_per_image * len(image_paths))
+
+    if ckpt.is_done("upload"):
+        video_id = ckpt.get("video_id")
+        video_url = ckpt.get("video_url")
+        logger.info(f"Stage 8: Already uploaded: {video_url}")
+    elif config.dry_run:
+        logger.info("Stage 8: Skipping upload (dry run)")
+        ckpt.mark_done("upload", video_id=None, video_url=None)
+    elif upload_budget and not upload_budget.try_use():
+        logger.info("Stage 8: Upload deferred (daily YouTube API quota budget reached)")
+    else:
+        logger.info("Stage 8: Uploading to YouTube...")
+        upload_result = _retry_on_error(
+            fn=lambda: youtube.upload_video(
+                video_path, title, description, thumb_path, config,
+                publish_at=publish_at, video_tags=video_tags,
+            ),
+            stage_name="upload",
+            config=config,
+        )
+        video_id = upload_result.video_id
+        video_url = upload_result.video_url
+        ckpt.mark_done("upload", video_id=video_id, video_url=video_url)
+        logger.info(f"Uploaded: {video_url}")
+
+    # --- Cleanup ---
+    if not config.dry_run and video_url and config.cleanup_after_upload:
+        logger.info("Cleaning up large output files...")
+        for item in output_dir.iterdir():
+            if item.name in ("metadata.json", "checkpoint.json"):
+                continue
+            if item.is_dir():
+                shutil.rmtree(item)
+            elif item.suffix in (".mp4", ".wav"):
+                item.unlink()
+
+    metadata = {
+        "topic": topic,
+        "title": title,
+        "video_id": video_id,
+        "video_url": video_url,
+        "audio_duration_seconds": audio_duration,
+        "num_visuals": len(image_paths),
+        "word_count": 0,
+        "quality_checks": {},
+    }
+    _save_artifact(output_dir / "metadata.json", json.dumps(metadata, indent=2))
+
+    return VideoResult(
+        topic=topic, title=title, video_id=video_id, video_url=video_url,
+        success=True, quality_results={},
+    )
 
 
 # ---------------------------------------------------------------------------

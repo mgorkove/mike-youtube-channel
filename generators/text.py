@@ -761,6 +761,88 @@ Return ONLY a JSON array of objects. Example:
     return valid
 
 
+def extract_satisfying_photo_prompts(
+    topic: str,
+    num_images: int,
+    config: Config,
+    client: genai.Client,
+) -> list[str]:
+    """Generate ~num_images unique 'perfectly satisfying' photo prompts.
+
+    Each prompt should describe a single photograph whose satisfaction
+    derives from geometry, vanishing-point perspective, repetition, or
+    surprising vantage point — not from a literal subject. Prompts are
+    intended to be passed directly to an image generator that produces
+    1080x1920 (9:16) vertical output.
+    """
+    archetypes = (
+        "vanishing-point corridors (shot from one end), "
+        "aerial / bird's-eye geometric patterns (salt pans, terraced fields, parking grids), "
+        "ground-level rows of trees / vines / crops converging to the horizon, "
+        "natural tunnels (canopied paths of cherry blossom, wisteria, ivy, ice), "
+        "mirror reflections (flooded rice terraces, salt flats, calm lakes mirroring sky), "
+        "perfect facade grids (apartment windows at dusk, library bookshelves, tile walls), "
+        "worm's-eye and bird's-eye views of staircases, atriums, and escalators, "
+        "color-block minimal compositions (Mediterranean alleys, painted walls), "
+        "dead-on symmetrical architecture (cathedrals, temples, courtyards), "
+        "crystalline natural geometry (basalt columns, salt crystals, frost patterns), "
+        "stacked or nested human-made repetition (shipping containers, stadium seats, beach umbrellas)"
+    )
+
+    prompt = f"""You are a visual director for a YouTube Shorts channel of
+"perfectly satisfying" photographs. Each video is a 60-second slideshow of
+{num_images} still images held for 2 seconds each.
+
+The unifying through-line of this video is the topic: "{topic}"
+
+The satisfaction of every image must come from at least ONE of these
+visual archetypes — geometry / repetition / perspective / vantage point —
+rather than the subject itself:
+{archetypes}.
+
+Generate exactly {num_images} image prompts. Each prompt must:
+- Describe ONE photograph in 1–3 sentences (no shot lists, no "8 photos in one")
+- Specify the vantage point clearly (overhead aerial / worm's-eye / dead-on / ground-level / drone top-down / etc.)
+- Specify lighting (golden hour / overcast / dawn / dusk / harsh midday / blue hour)
+- Specify location flavor when natural (e.g. "Provence", "Bali", "Iceland", "Tokyo metro") — but DO NOT mention copyrighted landmarks by name (no "Eiffel Tower", "Burj Khalifa", etc.)
+- Include "9:16 vertical composition" or "vertical orientation" — these are mobile Shorts
+- Be visually DISTINCT from every other prompt in the list (different archetype, different palette, different setting)
+- End with photographic style cues: "ultra sharp, hyper-real colors, cinematic, photorealistic"
+
+Do NOT include people's faces. Tiny anonymous figures for scale are OK.
+Do NOT include text or watermarks in the image.
+Do NOT use the words "satisfying" or "perfect" inside the prompts —
+those describe the channel, not the image content.
+
+Return ONLY a JSON array of exactly {num_images} prompt strings."""
+
+    response = client.models.generate_content(
+        model=config.text_model_name,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            temperature=config.text_model_temperature,
+            max_output_tokens=16384,
+        ),
+    )
+
+    prompts = _extract_json_array(response.text.strip())
+
+    # Pad or truncate to exact count
+    if len(prompts) < num_images:
+        logger.warning(
+            f"Got {len(prompts)} satisfying-photo prompts, expected {num_images}. "
+            f"Padding by repeating earlier prompts."
+        )
+        i = 0
+        while len(prompts) < num_images:
+            prompts.append(prompts[i % max(1, len(prompts))])
+            i += 1
+    elif len(prompts) > num_images:
+        prompts = prompts[:num_images]
+
+    return prompts
+
+
 def extract_catalog_image_prompts(
     script: str,
     config: Config,

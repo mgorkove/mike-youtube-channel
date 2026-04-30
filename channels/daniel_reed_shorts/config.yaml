@@ -1,0 +1,107 @@
+video_count: 1
+video_mode: "satisfying_shorts"
+skip_quality_checks: true
+skip_shorts: true     # this channel IS shorts; no derived short
+schedule_same_day: true
+
+channel:
+  theme: >
+    A YouTube Shorts channel of perfectly satisfying photographs.
+    Each short is a 60-second compilation of around 29 still images that
+    derive their satisfaction from geometry, repetition, perspective, and
+    surprising vantage points — vanishing-point corridors, aerial patterns,
+    symmetrical architecture, mirrored landscapes, perfect grids. No
+    voiceover; just calming music and visuals.
+  required_keywords:
+    - satisfying photos
+    - perfectly satisfying
+    - oddly satisfying
+    - aesthetic photography
+    - shorts
+  disclaimer: >
+    Images in this video are AI-generated and intended for visual
+    relaxation and entertainment only.
+
+# Satisfying-shorts mode never generates a script, but the pipeline's
+# Config dataclass still requires these fields. Values are unused.
+script:
+  min_words: 0
+  max_words: 1
+  banned_phrases: []
+
+text_model:
+  name: "gemini-3-flash-preview"
+  temperature: 0.95
+  max_output_tokens: 16384
+
+# Unused (no voiceover) but the Config requires the keys.
+tts:
+  model: "gemini-2.5-flash-preview-tts"
+  voice: "Orus"
+
+image_gen:
+  model: "gemini-2.5-flash-image"
+  seconds_per_image: 2
+  image_width: 1080
+  image_height: 1920
+  aspect_ratio: "9:16"
+
+thumbnail:
+  model: "gemini-2.5-flash-image"
+  width: 1080
+  height: 1920
+  min_contrast_ratio: 3.0
+
+video:
+  fps: 30
+  codec: "libx264"
+  audio_codec: "aac"
+  bitrate: "8000k"
+
+satisfying_shorts:
+  num_images: 29           # 29 photos × 2s + 2s intro = 60s
+  seconds_per_image: 2
+  intro_seconds: 2
+  intro_text: "perfectly satisfying photos"
+  music_volume: 0.6        # 0.0–1.0, attenuation of background music
+  # Pexels search terms used when assets/intro/ is empty. The pipeline
+  # picks one at random and downloads a portrait clip. Leave commented to
+  # use the built-in defaults (kinetic sand, slime, paint mixing, etc.).
+  # pexels_intro_queries:
+  #   - kinetic sand cutting
+  #   - slime stretching
+  #   - ink in water
+
+youtube:
+  client_secrets_file: "client_secrets.json"
+  token_file: "youtube_token_daniel_reed.json"
+  category_id: "22"        # People & Blogs (good fit for aesthetic shorts)
+  privacy_status: "private"
+  tags:
+    - satisfying photos
+    - oddly satisfying
+    - perfectly satisfying
+    - aesthetic
+    - relaxing
+    - shorts
+    - asmr visuals
+    - perfect timing
+    - photography
+
+retry:
+  max_attempts: 3
+  base_delay_seconds: 2
+  max_delay_seconds: 60
+
+scheduling:
+  timezone: "America/New_York"
+  publish_times:
+    - [9, 0]
+    - [17, 0]
+
+max_parallel_videos: 1
+render_workers: 4
+cleanup_after_upload: false
+
+output:
+  base_dir: "output"

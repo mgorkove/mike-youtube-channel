@@ -138,6 +138,16 @@ class Config:
     # Schedule videos for today instead of next Monday
     schedule_same_day: bool = False
 
+    # Satisfying-shorts mode settings
+    satisfying_num_images: int = 29
+    satisfying_seconds_per_image: int = 2
+    satisfying_intro_seconds: int = 2
+    satisfying_intro_text: str = "perfectly satisfying photos"
+    satisfying_music_volume: float = 0.6
+    satisfying_intro_dir: Path | None = None
+    satisfying_music_dir: Path | None = None
+    satisfying_pexels_intro_queries: list[str] = None
+
 
 def load_config(config_path: str = "config.yaml") -> Config:
     """Load and validate configuration from YAML + .env files."""
@@ -216,6 +226,11 @@ def load_config(config_path: str = "config.yaml") -> Config:
         if not shorts_bg_image.exists():
             raise FileNotFoundError(f"Shorts background image not found: {shorts_bg_image}")
 
+    # Satisfying-shorts settings (only used when video_mode == "satisfying_shorts")
+    sat_block = raw.get("satisfying_shorts", {}) or {}
+    sat_intro_dir = config_dir / "assets" / "intro"
+    sat_music_dir = config_dir / "assets" / "music"
+
     config = Config(
         topics=raw.get("topics", []),
         video_count=raw.get("video_count", 1),
@@ -281,6 +296,14 @@ def load_config(config_path: str = "config.yaml") -> Config:
         skip_quality_checks=raw.get("skip_quality_checks", False),
         skip_shorts=raw.get("skip_shorts", False),
         schedule_same_day=raw.get("schedule_same_day", False),
+        satisfying_num_images=sat_block.get("num_images", 29),
+        satisfying_seconds_per_image=sat_block.get("seconds_per_image", 2),
+        satisfying_intro_seconds=sat_block.get("intro_seconds", 2),
+        satisfying_intro_text=sat_block.get("intro_text", "perfectly satisfying photos"),
+        satisfying_music_volume=sat_block.get("music_volume", 0.6),
+        satisfying_intro_dir=sat_intro_dir,
+        satisfying_music_dir=sat_music_dir,
+        satisfying_pexels_intro_queries=sat_block.get("pexels_intro_queries") or None,
     )
 
     return config

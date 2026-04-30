@@ -119,6 +119,69 @@ def _fetch_single_clip(
     raise RuntimeError(f"No downloadable video files for query: '{query}'")
 
 
+DEFAULT_INTRO_QUERIES = [
+    "kinetic sand cutting",
+    "slime stretching",
+    "paint mixing",
+    "honey pour",
+    "ink in water",
+    "soap bubbles macro",
+    "marble run",
+    "water ripple slow motion",
+    "candle flame macro",
+    "rain on window",
+    "frost forming",
+    "milk drop slow motion",
+]
+
+
+def fetch_intro_clip(
+    output_path: Path,
+    queries: list[str] | None = None,
+    orientation: str = "portrait",
+) -> Path:
+    """Fetch one short visually-ASMR clip from Pexels and save it locally.
+
+    Tries the provided ``queries`` (random order) until one returns a
+    downloadable result. Pexels stock videos almost never carry audio —
+    this function only guarantees a video stream; callers should provide
+    their own audio (background music) over the result.
+    """
+    api_key = _get_api_key()
+    headers = {"Authorization": api_key}
+    pool = list(queries) if queries else list(DEFAULT_INTRO_QUERIES)
+    import random as _random
+    _random.shuffle(pool)
+
+    for query in pool:
+        params = {
+            "query": query,
+            "per_page": 10,
+            "orientation": orientation,
+            "size": "medium",
+        }
+        try:
+            resp = requests.get(PEXELS_VIDEO_SEARCH_URL, headers=headers, params=params, timeout=30)
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            logger.warning(f"Pexels intro search failed for '{query}': {e}")
+            continue
+
+        videos = [v for v in resp.json().get("videos", []) if v.get("duration", 0) >= 2]
+        if not videos:
+            continue
+        video = _random.choice(videos)
+        file_url = _pick_best_file(video.get("video_files", []), target_width=1080)
+        if not file_url:
+            continue
+        logger.info(f"Pexels intro clip: query='{query}', video_id={video['id']}")
+        return download_video(file_url, output_path)
+
+    raise RuntimeError(
+        f"Could not find any Pexels intro clip across {len(pool)} queries"
+    )
+
+
 def fetch_stock_clips(
     search_queries: list[str],
     output_dir: Path,
