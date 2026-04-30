@@ -73,9 +73,10 @@ def _generate_single_image(
             f"Subject: {prompt} "
             f"Photorealistic, ultra-sharp, cinematic, rich color, professional "
             f"photography. Absolutely no text, no watermarks, no captions, no "
-            f"logos. No close-ups of human faces (tiny anonymous figures in the "
-            f"distance for scale are acceptable). Not an illustration, not a "
-            f"painting, not a render — a photograph."
+            f"logos. NO close-ups of human FACES — but hands, feet, and "
+            f"anonymous figures photographed entirely from behind are perfectly "
+            f"fine. Not an illustration, not a painting, not a render — a "
+            f"photograph."
         )
         contents = [full_prompt]
     elif ref_match and active_ref:

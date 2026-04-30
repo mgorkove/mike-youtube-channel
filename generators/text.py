@@ -775,29 +775,83 @@ def extract_satisfying_photo_prompts(
     is a single self-contained image-gen prompt per entry.
     """
     archetypes = (
-        "vanishing-point corridors (shot from one end), "
-        "aerial / bird's-eye geometric patterns (salt pans, terraced fields, parking grids), "
-        "ground-level rows of trees / vines / crops converging to the horizon, "
-        "natural tunnels (canopied paths of cherry blossom, wisteria, ivy, ice), "
+        # Architecture / vantage / landscape
+        "vanishing-point corridors (escalators, hallways, tunnels), "
+        "aerial / bird's-eye geometric patterns (salt pans, terraced fields, parking grids, suburbs), "
+        "ground-level rows of trees / vines / crops converging to the horizon (lavender, olives, tulips), "
+        "natural tunnels (cherry blossom, wisteria, ivy, ice cave), "
         "mirror reflections (flooded rice terraces, salt flats, calm lakes), "
         "perfect facade grids (apartment windows at dusk, library bookshelves, tile walls), "
-        "worm's-eye and bird's-eye views of staircases, atriums, and escalators, "
+        "worm's-eye and bird's-eye views of staircases, atriums, escalators, organ pipes, "
         "color-block minimal compositions (Mediterranean alleys, painted walls), "
         "dead-on symmetrical architecture (cathedrals, temples, courtyards), "
-        "crystalline natural geometry (basalt columns, salt crystals, frost patterns), "
-        "stacked or nested human-made repetition (shipping containers, stadium seats, beach umbrellas), "
-        "macro nature with repetition (dewdrops ringing a leaf edge, frost crystals, cracked earth tiles)"
+        # Knolling / order / alignment
+        "knolling — everyday objects laid out flat in a perfect grid (tools, art supplies, hardware, kitchen utensils), "
+        "objects perfectly fitting other objects (eggs in a carton, tetris-like packing, pencils in a box), "
+        "color-graded shelves and racks (paint chip rainbows, sock wall, sneaker rainbow, book spines), "
+        "fresh untouched supplies (new pencils sharpened in spectrum order, sealed packaging, factory rows), "
+        # Cuts / cross-sections
+        "perfectly clean cross-sections (fruit, bread, soap, stone, layered cake, pomegranate, kiwi, agate), "
+        "hydraulic-press / knife-through-butter style perfect cuts (kinetic sand cube cut, soap bar shaving), "
+        "geode and crystal cross-sections, internal symmetry revealed, "
+        # Liquid physics / macro
+        "slow-motion liquid pours and droplets (honey, paint, milk, coffee crema, ink in water), "
+        "water droplets on surfaces (leaves, glass, hydrophobic fabric, spider web jewels), "
+        "ripple rings and crown splashes on the moment of impact, "
+        # Nature patterns / macro
+        "fibonacci spirals and fractal repetition (sunflower seeds, pinecone scales, pineapple, romanesco broccoli), "
+        "frost and snowflake crystalline geometry macro, "
+        "cracked-mud polygons, basalt columns, dried lakebed tiles, honeycombs, "
+        "dewdrops ringing a leaf edge, raindrops on flowers, "
+        # Fresh / pristine
+        "fresh snow with a single perfect set of tracks, fresh-cut grass with mower stripes, "
+        "freshly painted road lines, tennis court chalk, raked Zen sand gardens, untouched beach ripples, "
+        # Color gradients
+        "sunset gradient bands of pure color, paint-chip gradients, tile-glaze gradients, "
+        "aerial color-graded farmland (tulip fields, lavender, canola, terraced rice), "
+        # Food aesthetics
+        "top-down food knolling (bento boxes, charcuterie, mise-en-place ingredients), "
+        "pristine ice cream scoops, perfect espresso crema, latte art, layered pastries, "
+        # Stacking / repetition
+        "stacked firewood, stacked pottery, stacked bricks, shipping container yards, "
+        "identical hot-air balloons in formation, lifeguard towers in a row, beach umbrellas in pattern, "
+        # POV / hands-at-work / interaction
+        "first-person POV looking down at one's own feet on a striking surface (metro grate, tile mosaic, painted crosswalk, fresh snow, raked sand, koi pond bridge), "
+        "first-person POV of two hands at work (kneading dough, peeling an orange in one continuous strip, pouring honey, arranging objects in a grid, raking sand, cutting kinetic sand), "
+        "anonymous figure photographed entirely from BEHIND walking through a satisfying scene (lavender row, cherry blossom tunnel, library spiral, salt flat, cathedral nave, neon-lit Tokyo alley)"
     )
 
     examples = (
+        # Architecture
         '"Looking directly upward from the bottom of a very long escalator, chrome handrails and black rubber steps converging to a single bright point, symmetrical, underground metro, cool blue-silver light, ultra sharp, geometric"',
-        '"Ground-level shot looking down a perfectly straight row of lavender plants at sunrise, rows converging to a glowing orange horizon, long shadows, Provence France, ultra wide angle, cinematic"',
-        '"Directly overhead view looking down through a circular multi-story library atrium, spiraling bookshelves, warm wood and cream tones, concentric balconies, tiny anonymous figures below, architectural photography"',
         '"Aerial drone photograph of geometric salt evaporation ponds, each rectangle a different shade of pink coral rust and white, razor-thin dikes dividing them, abstract, hyper-real colors"',
         '"Walking path canopied by arching cherry blossom trees forming a natural tunnel, petals falling in still air, path receding to a bright vanishing point, soft diffused spring light, Japan, romantic, ultra sharp foreground"',
-        '"Dead-on symmetrical photograph of a large residential apartment facade at dusk, every window glowing a different warm amber or blue light, grid pattern, Southern Europe, flat composition, urban poetry"',
-        '"Interior of a Victorian cast-iron greenhouse looking toward the far end, white arched iron ribs repeating overhead, lush tropical plants flanking a gravel path, misted glass, warm diffused light, symmetrical"',
-        '"Flooded rice terraces on a hillside with each terrace perfectly reflecting the sky, steps of mirror-like water descending, vivid green earthen walls, tiny figures in one tier for scale, Bali, dawn light, cinematic"',
+        # Knolling / order
+        '"Top-down knolling shot of a complete vintage tool set laid out on a dark walnut workbench, each tool spaced exactly equal distance apart, brass and steel reflecting warm overhead light, tack sharp, professional product photography"',
+        '"Dead-on photograph of a wall of paint chip cards arranged as a continuous color spectrum from coral red to deep indigo, hardware store shelf, perfectly even lighting, flat composition, hyper-real colors"',
+        # Cuts / cross-sections
+        '"Macro photograph of a single perfect knife cut through a bar of pastel pink soap, the slice peeling back to reveal a pristine glossy interior, white seamless background, soft directional studio light, ultra sharp"',
+        '"Cross-section macro of a halved kiwi held at the center of frame, jet-black seeds arranged in a perfect ring around the pale green star, dewy translucent flesh, white background, food photography, hyper-real"',
+        # Liquid physics
+        '"High-speed photograph of a single milk droplet hitting a black coffee surface, frozen in time as a perfect liquid coronet with seven beads on its rim, dark espresso-brown background, dramatic side light, ultra sharp"',
+        '"Macro photograph of a fresh leaf rimmed with perfectly spaced clear water droplets along every serration of its edge, soft green out-of-focus background, overcast morning light, hyper-real, nature photography"',
+        # Nature patterns / macro
+        '"Top-down macro of a sunflower head in full bloom, the seeds spiraling outward in perfect Fibonacci geometry, deep mustard-yellow petals around the rim, late summer afternoon light, ultra sharp, hyper-real"',
+        '"Aerial drone photograph of a dried lakebed cracked into a vast geometric mosaic of pale tan polygons, each tile a slightly different size, harsh midday sun raking shadows into the cracks, abstract, hyper-real"',
+        # Fresh / pristine
+        '"Aerial photograph of a freshly mown stadium lawn, alternating dark and light green stripes running diagonally across the frame in mathematically perfect bands, late golden afternoon, hyper-real, sports photography"',
+        '"Top-down photograph of a Zen rock garden raked into perfect concentric ripples around three dark stones, white pebble background, soft diffused overcast light, Japan, minimalist, ultra sharp"',
+        # Gradients
+        '"Wide aerial drone photograph of a Dutch tulip field at peak bloom, ribbons of pure red, yellow, pink, and indigo planted in straight rows running to the horizon, golden hour, hyper-real saturated colors, cinematic"',
+        # Food aesthetics
+        '"Dead-on top-down photograph of a Japanese bento box, every compartment filled with a different food in a different geometric shape, vivid color contrast, soft diffused overhead light, food photography, ultra sharp"',
+        # Stacking / repetition
+        '"Aerial photograph of a row of fifty identical brightly colored hot air balloons floating at the same altitude over a misty Cappadocia valley at dawn, each balloon a different solid hue, hyper-real, cinematic"',
+        # POV / hands-at-work / figure-from-behind
+        '"First-person POV looking straight down at the photographer\'s own black sneakers standing on a metro station ventilation grate, polished steel bars receding in perfect parallel stripes around the feet, cool fluorescent light, ultra sharp, hyper-real"',
+        '"First-person POV of two hands peeling a single orange in one continuous unbroken spiral over a marble countertop, thin curling rind dangling, soft daylight from a window, food photography, hyper-real, ultra sharp"',
+        '"Photograph from directly behind a lone anonymous figure in a dark wool coat walking down the center aisle of a vast library between towering parallel bookshelves, reader unaware of camera, warm tungsten light, architectural photography, ultra sharp"',
+        '"First-person POV looking down at the photographer\'s feet planted on either side of a freshly raked Zen garden line, white pebbles around the feet etched into perfect parallel grooves, soft overcast morning light, Japan, minimalist, hyper-real"',
     )
     examples_block = "\n".join(f"- {e}" for e in examples)
 
@@ -806,11 +860,46 @@ for a YouTube Shorts channel of "perfectly satisfying" PHOTOGRAPHS — not
 illustrations, not cartoons, not paintings. Each Short is a slideshow of
 {num_images} still photographs held 2 seconds each.
 
-The unifying through-line of this video is: "{topic}"
+The loose theme of this video is: "{topic}" — use it as a starting bias,
+but the {num_images} photos must SPAN MULTIPLE oddly-satisfying
+categories so a viewer scrolling past sees variety, not 28 of the same
+shot. Aim to cover at least 6 of these categories across the {num_images}
+prompts:
 
-The satisfaction of every photo must come from ONE of these visual
-archetypes — geometry / repetition / perspective / vantage point — never
-from the subject alone:
+  1. ARCHITECTURE / VANTAGE POINT (vanishing-point corridors,
+     symmetrical facades, worm's-eye atria)
+  2. AERIAL / LANDSCAPE GEOMETRY (salt pans, terraced fields, tulip
+     fields, suburb grids)
+  3. KNOLLING / ALIGNMENT / ORDER (tools laid flat, color-graded
+     shelves, perfect packing)
+  4. PERFECT CUTS / CROSS-SECTIONS (fruit, soap, bread, geode,
+     hydraulic press)
+  5. LIQUID PHYSICS / DROPLETS (milk-coronet, ink in water, latte art,
+     dewdrops on a leaf edge)
+  6. NATURE PATTERNS / MACRO (fibonacci, fractal, frost, honeycomb,
+     cracked mud, basalt columns)
+  7. FRESH / PRISTINE STATE (untouched snow, mower stripes, raked
+     Zen sand, fresh paint lines)
+  8. COLOR GRADIENTS (sunset bands, paint-chip gradients, book-spine
+     spectrum, tulip field stripes)
+  9. FOOD AESTHETICS (top-down bento, espresso crema, layered cake
+     cross-section, charcuterie knolling)
+ 10. STACKING / REPETITION (firewood, hot-air balloons, beach umbrellas,
+     shipping containers, organ pipes)
+ 11. POV / HANDS-AT-WORK / FIGURE-FROM-BEHIND
+     - First-person looking down at one's own feet on a striking surface
+       (metro grate, fresh snow, raked Zen sand, mosaic floor, painted
+       crosswalk, koi-pond bridge)
+     - First-person two-handed shots of work in progress (peeling fruit
+       in one strip, kneading dough, pouring honey, arranging objects,
+       cutting kinetic sand, raking sand)
+     - Anonymous figure photographed entirely from BEHIND, walking
+       through a satisfying scene (lavender row, cherry tunnel, library
+       spiral, salt flat, cathedral nave, neon Tokyo alley)
+     IMPORTANT for category 11: at LEAST 3 of the {num_images} prompts
+     should fall in this category — viewers strongly engage with POV.
+
+Reference archetypes you can pull from:
 {archetypes}.
 
 OUTPUT FORMAT — match these EXACT examples in style and length. One
@@ -828,11 +917,11 @@ EVERY prompt MUST contain in this order:
 
 HARD RULES:
 - NO illustrations, NO cartoons, NO paintings, NO renders, NO 3D — every prompt must read as describing a photograph.
-- NO close-up human faces. Tiny anonymous figures for scale are fine.
+- NO close-up human FACES. (Hands, feet, and anonymous figures from behind ARE allowed and encouraged for POV / hands-at-work shots — that's category 11.)
 - NO text, signs, logos, or watermarks in the image.
 - NO listicles inside a single prompt — exactly ONE photograph per entry.
 - Do NOT use the words "satisfying" or "perfect" inside the prompts.
-- Each of the {num_images} prompts must be visually DISTINCT — different archetype, different palette, different setting. Cycle through the archetypes; don't make 29 escalators.
+- Each of the {num_images} prompts must be visually DISTINCT — different archetype, different palette, different setting. Cycle through the categories; don't make 28 escalators.
 
 Return ONLY a JSON array of exactly {num_images} prompt strings."""
 
