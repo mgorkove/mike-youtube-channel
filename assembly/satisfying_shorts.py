@@ -162,7 +162,7 @@ def assemble_satisfying_short(
     intro_vf = (
         f"[0:v]scale={W}:{H}:force_original_aspect_ratio=increase,"
         f"crop={W}:{H},setsar=1,fps={fps},format=yuv420p[bg];"
-        f"[bg][1:v]overlay=(W-w)/2:H*0.42[v]"
+        f"[bg][1:v]overlay=(W-w)/2:H*0.13[v]"
     )
     # Intro segment is silent video only — Pexels clips usually have no
     # audio anyway, and music is muxed over the entire 60s in step 4.
