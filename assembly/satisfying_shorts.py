@@ -29,7 +29,7 @@ FFMPEG = str(_BUNDLED_FFMPEG) if _BUNDLED_FFMPEG.exists() else "ffmpeg"
 FFPROBE = str(_BUNDLED_FFPROBE) if _BUNDLED_FFPROBE.exists() else "ffprobe"
 
 # Default font for intro text overlay; lives in repo root assets/.
-_DEFAULT_FONT = _PROJECT_ROOT / "assets" / "Anton-Regular.ttf"
+_DEFAULT_FONT = _PROJECT_ROOT / "assets" / "Inter-Bold.ttf"
 
 W = 1080
 H = 1920
@@ -150,23 +150,19 @@ def assemble_satisfying_short(
     _run(cmd_photos, "photos slideshow")
 
     # --- Step 2: Build the intro segment (intro clip + text overlay) ---
-    font_path = _DEFAULT_FONT if _DEFAULT_FONT.exists() else None
-    text = _ffmpeg_escape_text(config.satisfying_intro_text)
-    fontfile_clause = f"fontfile='{_ffmpeg_escape_path(font_path)}':" if font_path else ""
-    drawtext = (
-        f"drawtext={fontfile_clause}"
-        f"text='{text}':"
-        f"fontcolor=white:"
-        f"fontsize=72:"
-        f"borderw=4:bordercolor=black@0.85:"
-        f"x=(w-text_w)/2:"
-        f"y=h*0.42"
+    # Render a transparent PNG containing a rounded white "pill" with bold
+    # black text inside, then overlay it on the intro clip with ffmpeg.
+    # ffmpeg's drawtext can't draw rounded corners, so we use PIL.
+    pill_png = _render_pill_png(
+        text=config.satisfying_intro_text,
+        font_path=_DEFAULT_FONT if _DEFAULT_FONT.exists() else None,
+        out_path=temp_dir / "intro_pill.png",
     )
+
     intro_vf = (
-        f"scale={W}:{H}:force_original_aspect_ratio=increase,"
-        f"crop={W}:{H},"
-        f"setsar=1,fps={fps},format=yuv420p,"
-        f"{drawtext}"
+        f"[0:v]scale={W}:{H}:force_original_aspect_ratio=increase,"
+        f"crop={W}:{H},setsar=1,fps={fps},format=yuv420p[bg];"
+        f"[bg][1:v]overlay=(W-w)/2:H*0.42[v]"
     )
     # Intro segment is silent video only — Pexels clips usually have no
     # audio anyway, and music is muxed over the entire 60s in step 4.
@@ -175,7 +171,9 @@ def assemble_satisfying_short(
         FFMPEG, "-y",
         "-t", str(intro_secs),
         "-i", str(intro_clip),
-        "-vf", intro_vf,
+        "-i", str(pill_png),
+        "-filter_complex", intro_vf,
+        "-map", "[v]",
         "-r", str(fps),
         "-t", str(intro_secs),
         "-c:v", config.video_codec,
@@ -235,6 +233,51 @@ def assemble_satisfying_short(
     shutil.rmtree(temp_dir, ignore_errors=True)
     logger.info(f"Satisfying short assembled: {output_path} ({total_secs}s)")
     return output_path
+
+
+def _render_pill_png(
+    text: str,
+    font_path: Path | None,
+    out_path: Path,
+    font_size: int = 72,
+    pad_x: int = 36,
+    pad_y: int = 22,
+    radius: int = 36,
+) -> Path:
+    """Render the intro 'pill': bold black text on a rounded white box,
+    saved as a transparent PNG sized exactly to the pill bounds."""
+    from PIL import Image, ImageDraw, ImageFont
+
+    if font_path is not None and Path(font_path).exists():
+        font = ImageFont.truetype(str(font_path), font_size)
+    else:
+        font = ImageFont.load_default()
+
+    # Measure text bounds
+    tmp = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
+    bbox = ImageDraw.Draw(tmp).textbbox((0, 0), text, font=font)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+
+    pill_w = text_w + 2 * pad_x
+    pill_h = text_h + 2 * pad_y
+
+    img = Image.new("RGBA", (pill_w, pill_h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    draw.rounded_rectangle(
+        [(0, 0), (pill_w - 1, pill_h - 1)],
+        radius=radius,
+        fill=(255, 255, 255, 255),
+    )
+    # Center the text inside the pill (account for bbox y-offset).
+    draw.text(
+        (pad_x - bbox[0], pad_y - bbox[1]),
+        text,
+        font=font,
+        fill=(0, 0, 0, 255),
+    )
+    img.save(out_path, "PNG")
+    return out_path
 
 
 def make_thumbnail_from_photo(

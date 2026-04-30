@@ -769,50 +769,70 @@ def extract_satisfying_photo_prompts(
 ) -> list[str]:
     """Generate ~num_images unique 'perfectly satisfying' photo prompts.
 
-    Each prompt should describe a single photograph whose satisfaction
+    Each prompt describes a single hyper-real photograph whose satisfaction
     derives from geometry, vanishing-point perspective, repetition, or
-    surprising vantage point — not from a literal subject. Prompts are
-    intended to be passed directly to an image generator that produces
-    1080x1920 (9:16) vertical output.
+    surprising vantage point — not from the literal subject. Output format
+    is a single self-contained image-gen prompt per entry.
     """
     archetypes = (
         "vanishing-point corridors (shot from one end), "
         "aerial / bird's-eye geometric patterns (salt pans, terraced fields, parking grids), "
         "ground-level rows of trees / vines / crops converging to the horizon, "
         "natural tunnels (canopied paths of cherry blossom, wisteria, ivy, ice), "
-        "mirror reflections (flooded rice terraces, salt flats, calm lakes mirroring sky), "
+        "mirror reflections (flooded rice terraces, salt flats, calm lakes), "
         "perfect facade grids (apartment windows at dusk, library bookshelves, tile walls), "
         "worm's-eye and bird's-eye views of staircases, atriums, and escalators, "
         "color-block minimal compositions (Mediterranean alleys, painted walls), "
         "dead-on symmetrical architecture (cathedrals, temples, courtyards), "
         "crystalline natural geometry (basalt columns, salt crystals, frost patterns), "
-        "stacked or nested human-made repetition (shipping containers, stadium seats, beach umbrellas)"
+        "stacked or nested human-made repetition (shipping containers, stadium seats, beach umbrellas), "
+        "macro nature with repetition (dewdrops ringing a leaf edge, frost crystals, cracked earth tiles)"
     )
 
-    prompt = f"""You are a visual director for a YouTube Shorts channel of
-"perfectly satisfying" photographs. Each video is a 60-second slideshow of
-{num_images} still images held for 2 seconds each.
+    examples = (
+        '"Looking directly upward from the bottom of a very long escalator, chrome handrails and black rubber steps converging to a single bright point, symmetrical, underground metro, cool blue-silver light, ultra sharp, geometric"',
+        '"Ground-level shot looking down a perfectly straight row of lavender plants at sunrise, rows converging to a glowing orange horizon, long shadows, Provence France, ultra wide angle, cinematic"',
+        '"Directly overhead view looking down through a circular multi-story library atrium, spiraling bookshelves, warm wood and cream tones, concentric balconies, tiny anonymous figures below, architectural photography"',
+        '"Aerial drone photograph of geometric salt evaporation ponds, each rectangle a different shade of pink coral rust and white, razor-thin dikes dividing them, abstract, hyper-real colors"',
+        '"Walking path canopied by arching cherry blossom trees forming a natural tunnel, petals falling in still air, path receding to a bright vanishing point, soft diffused spring light, Japan, romantic, ultra sharp foreground"',
+        '"Dead-on symmetrical photograph of a large residential apartment facade at dusk, every window glowing a different warm amber or blue light, grid pattern, Southern Europe, flat composition, urban poetry"',
+        '"Interior of a Victorian cast-iron greenhouse looking toward the far end, white arched iron ribs repeating overhead, lush tropical plants flanking a gravel path, misted glass, warm diffused light, symmetrical"',
+        '"Flooded rice terraces on a hillside with each terrace perfectly reflecting the sky, steps of mirror-like water descending, vivid green earthen walls, tiny figures in one tier for scale, Bali, dawn light, cinematic"',
+    )
+    examples_block = "\n".join(f"- {e}" for e in examples)
 
-The unifying through-line of this video is the topic: "{topic}"
+    prompt = f"""You are a photo-director writing image-generation prompts
+for a YouTube Shorts channel of "perfectly satisfying" PHOTOGRAPHS — not
+illustrations, not cartoons, not paintings. Each Short is a slideshow of
+{num_images} still photographs held 2 seconds each.
 
-The satisfaction of every image must come from at least ONE of these
-visual archetypes — geometry / repetition / perspective / vantage point —
-rather than the subject itself:
+The unifying through-line of this video is: "{topic}"
+
+The satisfaction of every photo must come from ONE of these visual
+archetypes — geometry / repetition / perspective / vantage point — never
+from the subject alone:
 {archetypes}.
 
-Generate exactly {num_images} image prompts. Each prompt must:
-- Describe ONE photograph in 1–3 sentences (no shot lists, no "8 photos in one")
-- Specify the vantage point clearly (overhead aerial / worm's-eye / dead-on / ground-level / drone top-down / etc.)
-- Specify lighting (golden hour / overcast / dawn / dusk / harsh midday / blue hour)
-- Specify location flavor when natural (e.g. "Provence", "Bali", "Iceland", "Tokyo metro") — but DO NOT mention copyrighted landmarks by name (no "Eiffel Tower", "Burj Khalifa", etc.)
-- Include "9:16 vertical composition" or "vertical orientation" — these are mobile Shorts
-- Be visually DISTINCT from every other prompt in the list (different archetype, different palette, different setting)
-- End with photographic style cues: "ultra sharp, hyper-real colors, cinematic, photorealistic"
+OUTPUT FORMAT — match these EXACT examples in style and length. One
+self-contained image prompt per entry, comma-separated clauses:
 
-Do NOT include people's faces. Tiny anonymous figures for scale are OK.
-Do NOT include text or watermarks in the image.
-Do NOT use the words "satisfying" or "perfect" inside the prompts —
-those describe the channel, not the image content.
+{examples_block}
+
+EVERY prompt MUST contain in this order:
+1. Vantage point ("Looking straight up...", "Aerial drone view...", "Dead-on symmetrical...", "Ground-level shot...", "Directly overhead...", "Worm's-eye view...")
+2. Concrete subject (escalator, lavender row, library atrium, salt ponds, cherry tunnel, apartment facade, greenhouse, rice terraces, etc.)
+3. The geometric pattern that does the work ("converging to a vanishing point", "concentric rings", "grid", "spiral", "mirror reflection", "razor-thin dividing lines")
+4. Lighting cue ("golden hour", "blue hour", "dawn", "overcast", "soft diffused light", "harsh midday", "warm amber")
+5. Location flavor ("Provence France", "Japan", "Bali", "Iceland", "Tokyo metro", "Mediterranean coast", "Southern Europe") — never copyrighted landmark names (no Eiffel Tower / Burj Khalifa / Times Square)
+6. Photographic style cues at the end: "ultra sharp", "cinematic", "hyper-real colors", "architectural photography", "professional photography"
+
+HARD RULES:
+- NO illustrations, NO cartoons, NO paintings, NO renders, NO 3D — every prompt must read as describing a photograph.
+- NO close-up human faces. Tiny anonymous figures for scale are fine.
+- NO text, signs, logos, or watermarks in the image.
+- NO listicles inside a single prompt — exactly ONE photograph per entry.
+- Do NOT use the words "satisfying" or "perfect" inside the prompts.
+- Each of the {num_images} prompts must be visually DISTINCT — different archetype, different palette, different setting. Cycle through the archetypes; don't make 29 escalators.
 
 Return ONLY a JSON array of exactly {num_images} prompt strings."""
 

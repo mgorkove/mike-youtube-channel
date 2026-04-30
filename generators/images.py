@@ -63,7 +63,22 @@ def _generate_single_image(
             prompt = _REF_TYPE_PATTERN.sub("", prompt)
         active_ref = reference_img
 
-    if ref_match and active_ref:
+    if config.video_mode == "satisfying_shorts":
+        # Photographic mode: no cartoon wrapper, no reference character.
+        # The LLM-written prompt already specifies vantage point, lighting,
+        # location, and style cues — pass it through with a thin photo
+        # wrapper that locks aspect ratio and forbids text/people-faces.
+        full_prompt = (
+            f"A single hyper-realistic photograph in vertical 9:16 aspect ratio. "
+            f"Subject: {prompt} "
+            f"Photorealistic, ultra-sharp, cinematic, rich color, professional "
+            f"photography. Absolutely no text, no watermarks, no captions, no "
+            f"logos. No close-ups of human faces (tiny anonymous figures in the "
+            f"distance for scale are acceptable). Not an illustration, not a "
+            f"painting, not a render — a photograph."
+        )
+        contents = [full_prompt]
+    elif ref_match and active_ref:
         # Catalog mode: prompt is a direct replacement instruction (e.g.
         # "Change the gun to an M16. Change the release date to 1964.")
         # Pass it verbatim with the reference image.
@@ -145,13 +160,20 @@ def _generate_single_image(
 
     # Fallback: retry with a generic/sanitized version of the prompt
     # (the original may have been blocked by content policy)
-    sanitized_prompt = (
-        f"Generate a muted, desaturated cartoon illustration in 16:9 aspect ratio. "
-        f"A dramatic scene related to: {prompt}. "
-        f"Use a subdued, earthy color palette with muted greens, grays, tans, and olive tones. "
-        f"Avoid bright or vibrant colors. Clean cartoon style with soft shading and clean outlines. "
-        f"No text or watermarks in the image. Keep the scene appropriate for all audiences."
-    )
+    if config.video_mode == "satisfying_shorts":
+        sanitized_prompt = (
+            f"A serene hyper-realistic photograph in vertical 9:16 aspect ratio "
+            f"showing: {prompt}. Photorealistic, cinematic, ultra-sharp. "
+            f"No text, no watermarks, no human faces."
+        )
+    else:
+        sanitized_prompt = (
+            f"Generate a muted, desaturated cartoon illustration in 16:9 aspect ratio. "
+            f"A dramatic scene related to: {prompt}. "
+            f"Use a subdued, earthy color palette with muted greens, grays, tans, and olive tones. "
+            f"Avoid bright or vibrant colors. Clean cartoon style with soft shading and clean outlines. "
+            f"No text or watermarks in the image. Keep the scene appropriate for all audiences."
+        )
     sanitized_contents = [sanitized_prompt]
     if reference_img:
         sanitized_contents.append(reference_img)

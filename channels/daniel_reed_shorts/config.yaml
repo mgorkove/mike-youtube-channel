@@ -59,9 +59,9 @@ video:
   bitrate: "8000k"
 
 satisfying_shorts:
-  num_images: 29           # 29 photos × 2s + 2s intro = 60s
+  num_images: 28           # 28 photos × 2s + 4s intro = 60s
   seconds_per_image: 2
-  intro_seconds: 2
+  intro_seconds: 4
   intro_text: "perfectly satisfying photos"
   music_volume: 0.6        # 0.0–1.0, attenuation of background music
   # Pexels search terms used when assets/intro/ is empty. The pipeline
