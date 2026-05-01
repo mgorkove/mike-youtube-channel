@@ -1058,17 +1058,13 @@ def _process_satisfying_short(
         logger.info(f"Title: {title}")
 
     # --- Stage 2: Description ---
+    # For satisfying_shorts, the description is just the title with hashtags stripped.
     desc_path = output_dir / "description.txt"
     if ckpt.is_done("description") and desc_path.exists():
         description = desc_path.read_text(encoding="utf-8")
     else:
-        logger.info("Stage 2: Generating description...")
-        description = _retry_on_error(
-            fn=lambda: text.generate_description(topic, title, "", config, client),
-            stage_name="description",
-            config=config,
-        )
-        description = _ensure_description_footer(description, config)
+        description = re.sub(r"#\S+", "", title).strip()
+        description = re.sub(r"\s+", " ", description)
         _save_artifact(desc_path, description)
         ckpt.mark_done("description")
 
